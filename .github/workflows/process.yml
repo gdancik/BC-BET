@@ -1,0 +1,50 @@
+name: process_data 
+
+on: 
+    push:
+        paths:
+            - setup/R/process/process_*.R
+            - setup/R/process/run_all.R 
+    pull_request:
+        paths:
+            - setup/R/process/process_*.R
+            - setup/R/process/run_all.R 
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: mstachniuk/ci-skip@v1
+      with:
+        fail-fast: true
+
+    - name: Set up R 
+      uses: r-lib/actions/setup-r@v1
+
+    - name: install libcurl
+      run: sudo apt-get install libcurl4-openssl-dev
+
+    - name: Install remotes 
+      run: |
+          install.packages('remotes')
+      shell: Rscript {0}
+
+    - name: Cache R packages
+      id: cache-packages
+      uses: actions/cache@v2
+      with:
+            path: ${{ env.R_LIBS_USER }}
+            key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-GEOquery-1
+
+    - name: Query dependencies
+      run: |
+          remotes::install_bioc('GEOquery')
+      shell: Rscript {0}
+
+    - name: Test run_all.R 
+      run:  cd setup/R/process/ && mkdir png && Rscript run_all.R
+ 
