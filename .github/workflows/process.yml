@@ -46,5 +46,7 @@ jobs:
       shell: Rscript {0}
 
     - name: Test run_all.R 
-      run:  cd setup/R/process/ && mkdir png && Rscript run_all.R
- 
+      run:  cd setup/R/process/ && Rscript run_all.R
+
+    - name: Validate IDs 
+      run:  cd setup/R/process/ && Rscript validate.R

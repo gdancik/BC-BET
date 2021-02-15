@@ -6,6 +6,11 @@ rm(list = ls())
 source('functions/get_gene_expression.R')
 source('functions/generate_boxplot.R')
 
+# specify dataset name and set file names appropriately
+ds_name <- 'mskcc'
+file_expr <- paste0('../../data/processed/', ds_name, '.RData')
+file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
+
 # load expression and platform data
 load("../../data/original/Sanchez.RData")
 load("../../data/platforms/GPL96.RData")
@@ -20,8 +25,19 @@ generate_boxplot(SC.expr, 'MSKCC')
 # get gene-level expression values
 mskcc.expr <- get_expression(SC.expr, GPL96)
 
-rm(SC.expr)
+### extract clinical data
+SC.stage = rep(NA,length(SC.stage.T))
+SC.stage[SC.stage.T == 0] <- 'nmi'
+SC.stage[SC.stage.T == 1] <- 'nmi'
+SC.stage[SC.stage.T > 1] <- 'mi'
 
-# save data
-save(list = ls(), file = '../../data/processed/mskcc.RData')
+SC.tumor <- as.double(SC.p$TYPE != 0)
+SC.tumor <- factor(SC.tumor, labels = c('normal', 'tumor'))
 
+# create clinical data table
+mskcc_clinical <- data.frame(id = colnames(SC.expr), tumor = SC.tumor, 
+                             grade = SC.grade, stage = SC.stage)
+
+# save expression and clinical data
+save(mskcc.expr, file = file_expr)
+save(mskcc_clinical, file = file_clinical)
