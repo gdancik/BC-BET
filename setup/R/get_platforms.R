@@ -54,9 +54,8 @@ wd <- setwdToCurrentFileLocation()
 # get arguments; if no arguments are specified, get all platforms
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  args <- c('GPL96', 'GPL6102', 'GPL570')
+  args <- c('GPL96', 'GPL6102', 'GPL570', 'GPL4060', 'GPL6947')
 }
-
 
 for (a in args) {
   
@@ -64,12 +63,27 @@ for (a in args) {
   pl <- Table(getGEO(a))
 
   if (a %in% c('GPL96', 'GPL570')) {
-    x <- select(pl, 'ID', `Gene Symbol`) %>% 
-      filter (`Gene Symbol` != '')
-  } else if (a == 'GPL6102'){
-    x <- select(pl, 'ID', 'Symbol') %>%
-      filter (Symbol != '')
-  } else {
+    x <- dplyr::select(pl, 'ID', `Gene Symbol`) %>% 
+      dplyr::filter (`Gene Symbol` != '')
+  } else if (a %in% c('GPL6102', 'GPL6947')){
+    x <- dplyr::select(pl, 'ID', 'Symbol') %>%
+      dplyr::filter (Symbol != '')
+  } else if (a == 'GPL4060') {
+    # map gene symbols to GB ACC using org.Hs.eg.db
+    library(org.Hs.eg.db)
+    
+    acc <- unique(pl$GB_ACC[pl$GB_ACC != ""])
+    s <- AnnotationDbi::select(org.Hs.eg.db, keys = acc, 
+                columns = c("SYMBOL"), keytype = "ACCNUM" )
+    s <- s %>% filter(!is.na(SYMBOL))
+    
+    m <- match(s$ACCNUM, pl$GB_ACC)
+  
+    pl <- cbind(pl[m,], s)  
+    x <- dplyr::filter(pl, SYMBOL!= '') %>% 
+      dplyr::transmute(ID = ID, Symbol = SYMBOL)
+      
+  }else {
     stop('not implemented')
   }
   

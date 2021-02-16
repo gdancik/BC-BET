@@ -1,5 +1,3 @@
-rm(list = ls())
-
 #' Gets gene level expression matrix keeping probes with highest
 #' mean expression
 #' 
@@ -34,6 +32,10 @@ get_expression <- function(X, pl) {
       g <- grep(paste0('(?!-)\\b',g1,'\\b(?!-)'),  
                 pl[,2], perl = TRUE)
 
+      if (length(g) == 0) {
+        cat("not found: ", g1, '...\n')
+      }
+      
       probes <- pl[g,1]
       
       m <- match(probes, rownames(X))      
@@ -43,14 +45,20 @@ get_expression <- function(X, pl) {
     
       if (nrow(xx) > 1) {
         w <- which.max(rowMeans(xx))
-        xx <- xx[w,]
+        xx <- xx[w, , drop = FALSE]
       }
-  
+      
+    if (nrow(xx) == 1) {
+      rownames(xx) <- g1  
+    }
+      
     allX[[i]] <- xx
+
   }
 
   names(allX) <- genes
   allX <- do.call(rbind, allX)
+
   allX
 }
 

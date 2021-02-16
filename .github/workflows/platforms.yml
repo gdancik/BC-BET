@@ -4,9 +4,6 @@ on:
     push:
         paths:
             - setup/R/get_platforms.R 
-    pull_request:
-        paths:
-            - setup/R/get_platforms.R
 
 jobs:
   build:
@@ -41,6 +38,8 @@ jobs:
     - name: Query dependencies
       run: |
           remotes::install_bioc('GEOquery')
+          remotes::install_cran('BiocManager')
+          BiocManager::install('org.Hs.eg.db')
       shell: Rscript {0}
 
     - name: Test get_platforms.R 
