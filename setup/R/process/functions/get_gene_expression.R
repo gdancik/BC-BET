@@ -1,5 +1,3 @@
-rm(list = ls())
-
 #' Gets gene level expression matrix keeping probes with highest
 #' mean expression
 #' 
