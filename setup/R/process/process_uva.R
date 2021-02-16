@@ -31,7 +31,7 @@ uva.expr <- get_expression(uva.expr, GPL96)
 GSE37317.p <- pData(UVA[[1]])
 
 keep <- GSE37317.p$characteristics_ch1.2 == "histology: urothelial carcinoma"
-GSE37317.expr = uva.expr[,keep]
+uva.expr = uva.expr[,keep]
 GSE37317.p = GSE37317.p[keep,]
 
 # get stages #
