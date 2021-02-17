@@ -5,11 +5,6 @@ on:
         paths:
             - setup/R/process/process_*.R
             - setup/R/process/run_all.R 
-    pull_request:
-        paths:
-            - setup/R/process/process_*.R
-            - setup/R/process/run_all.R 
-
 jobs:
   build:
 

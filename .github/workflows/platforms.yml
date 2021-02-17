@@ -4,9 +4,6 @@ on:
     push:
         paths:
             - setup/R/get_platforms.R 
-    pull_request:
-        paths:
-            - setup/R/get_platforms.R
 
 jobs:
   build:
