@@ -5,8 +5,7 @@ library(impute)
 cat('processing blaveri ...\n\n')
 
 rm(list = ls())
-source('functions/get_gene_expression.R')
-source('functions/generate_boxplot.R')
+source('functions/setup_functions.R')
 
 # specify dataset name and set file names appropriately
 ds_name <- 'blaveri'
@@ -44,10 +43,11 @@ Blaveri.grade[grep("LG",Blaveri.p$grade)] = 'lg'
 Blaveri.grade[grep("HG",Blaveri.p$grade)] = 'hg'
 
 # create clinical data table
-blaveri_clinical <- data.frame(id = colnames(blaveri.expr), 
+blaveri_clinical <- create_clinical_table(id = colnames(blaveri.expr), 
                                grade = Blaveri.grade,
-                               stage = Blaveri.stage)
-
+                               stage = Blaveri.stage,
+                               os.time = Blaveri.p$Survival..mos.,
+                               os.outcome = as.integer(Blaveri.p$Survival_Status)-1)
 
 # save expression and clinical data
 save(blaveri.expr, file = file_expr)

@@ -38,6 +38,6 @@ s <- lapply(files_clinical, validateIDs)
 s <- unlist(s)
 
 if (any(!s)) {
-  w <- which(s)
+  w <- which(!s)
   stop('IDs do not match for: ',  paste0(names(s)[w], collapse = ', '))
 }

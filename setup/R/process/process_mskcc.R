@@ -3,8 +3,7 @@
 cat('processing mskcc...\n\n')
 
 rm(list = ls())
-source('functions/get_gene_expression.R')
-source('functions/generate_boxplot.R')
+source('functions/setup_functions.R')
 
 # specify dataset name and set file names appropriately
 ds_name <- 'mskcc'
@@ -35,8 +34,10 @@ SC.tumor <- as.double(SC.p$TYPE != 0)
 SC.tumor <- factor(SC.tumor, labels = c('normal', 'tumor'))
 
 # create clinical data table
-mskcc_clinical <- data.frame(id = colnames(SC.expr), tumor = SC.tumor, 
-                             grade = SC.grade, stage = SC.stage)
+mskcc_clinical <- create_clinical_table(id = colnames(SC.expr), tumor = SC.tumor, 
+                             grade = SC.grade, stage = SC.stage,
+                             dss_time = SC.OS.time,
+                             dss_outcome = SC.OS.outcome)
 
 # save expression and clinical data
 save(mskcc.expr, file = file_expr)

@@ -3,8 +3,7 @@
 cat('processing mda2...\n\n')
 
 rm(list = ls())
-source('functions/get_gene_expression.R')
-source('functions/generate_boxplot.R')
+source('functions/setup_functions.R')
 
 # specify dataset name and set file names appropriately
 ds_name <- 'mda2'
@@ -27,7 +26,8 @@ generate_boxplot(mda2.expr, 'MDA-2')
 mda2.expr <- get_expression(mda2.expr, GPL6947)
 
 ## get clinical data
-# stage info is in both ch1 and ch1.4
+
+# extract stage info, which is in both ch1 and ch1.4
 
 tmp <- rep(NA, ncol(mda2.expr))
 g1 <- grep("cstage", GSE48075.p$characteristics_ch1)
@@ -40,31 +40,24 @@ tmp[g1] <-  as.character(GSE48075.p$characteristics_ch1[g1])
 tmp[g2] <-  as.character(GSE48075.p$characteristics_ch1.4[g2])
 
 stage <- rep(NA, length(tmp)) 
-stage[grep("Ta",tmp)] <- 'nmi'
-stage[grep("T1",tmp)] <- 'nmi'
-stage[grep("T2",tmp)] <- 'mi'
-stage[grep("T3",tmp)] <- 'mi'
-stage[grep("T4",tmp)] <- 'mi'
+stage[grep("T[a1]",tmp)] <- 'nmi'
+stage[grep("T[2-4]",tmp)] <- 'mi'
 
+# extract os info
+time = as.character(GSE48075.p$characteristics_ch1.8)
+time = as.double(gsub("survival \\(mo\\): ","", time))
 
-#####################################
-# is survival time for OS or DSS?
-#####################################
-
-# time = as.character(GSE48075.p$characteristics_ch1.8)
-# time = as.double(gsub("survival \\(mo\\): ","", time))
-# 
-# tmp = as.character(GSE48075.p$characteristics_ch1.6)
-# outcome = rep(NA, length(tmp))
-# outcome[tmp == "os censor: uncensored"] = 1
-# outcome[tmp == "os censor: censored"] = 0
-# 
-# GSE48075.time = time
-# GSE48075.outcome = outcome
+tmp = as.character(GSE48075.p$characteristics_ch1.6)
+outcome = rep(NA, length(tmp))
+outcome[tmp == "os censor: uncensored"] = 1
+outcome[tmp == "os censor: censored"] = 0
+ 
 
 # create clinical data table
-mda2_clinical <- data.frame(id = colnames(mda2.expr), 
-                            stage = stage)
+mda2_clinical <- create_clinical_table(id = colnames(mda2.expr), 
+                            stage = stage,
+                            os.time = time,
+                            os.outcome = outcome)
 
 # save expression and clinical data
 save(mda2.expr, file = file_expr)
