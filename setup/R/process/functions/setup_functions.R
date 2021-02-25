@@ -65,12 +65,16 @@ get_expression <- function(X, pl) {
 #' Generates boxplot from first 20 sample of 'X'
 #' with title given by 'name'
 
-generate_boxplot <- function(X, name) {
-  file <- paste0('png/', name, '_', Sys.Date(), '.png')
+generate_boxplot <- function(X, name, save.file = TRUE) {
   n <- min(20, ncol(X))
-  png(file = file)
+  if (save.file) {
+    file <- paste0('png/', name, '_', Sys.Date(), '.png')
+    png(file = file)
+  }
   boxplot(X[,1:n], main = name, ylab = 'log 2 expression')
-  dev.off()
+  if (save.file) {
+    dev.off()
+  }
 }
 
 
