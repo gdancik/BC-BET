@@ -5,8 +5,7 @@ library(GEOquery)
 cat('processing uva...\n\n')
 
 rm(list = ls())
-source('functions/get_gene_expression.R')
-source('functions/generate_boxplot.R')
+source('functions/setup_functions.R')
 
 # specify dataset name and set file names appropriately
 ds_name <- 'uva'
@@ -40,7 +39,7 @@ uva.stage[GSE37317.p$characteristics_ch1.1 == "muscle invasion: non-muscle invas
 uva.stage[GSE37317.p$characteristics_ch1.1 == "muscle invasion: muscle invasive"] <- "mi"
 
 # create clinical data table
-uva_clinical <- data.frame(id = colnames(uva.expr), stage = uva.stage)
+uva_clinical <- create_clinical_table(id = colnames(uva.expr), stage = uva.stage)
 
 # save expression and clinical data
 save(uva.expr, file = file_expr)

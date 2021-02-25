@@ -54,7 +54,7 @@ wd <- setwdToCurrentFileLocation()
 # get arguments; if no arguments are specified, get all platforms
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  args <- c('GPL96', 'GPL6102', 'GPL570', 'GPL4060', 'GPL6947')
+  args <- c('GPL96', 'GPL6102', 'GPL91', 'GPL570', 'GPL4060', 'GPL6947', 'GPL14951')
 }
 
 for (a in args) {
@@ -62,7 +62,7 @@ for (a in args) {
   cat('\n\ndownloading platform data:', a, '\n')
   pl <- Table(getGEO(a))
 
-  if (a %in% c('GPL96', 'GPL570')) {
+  if (a %in% c('GPL96', 'GPL570', 'GPL91')) {
     x <- dplyr::select(pl, 'ID', `Gene Symbol`) %>% 
       dplyr::filter (`Gene Symbol` != '')
   } else if (a %in% c('GPL6102', 'GPL6947')){
@@ -83,6 +83,9 @@ for (a in args) {
     x <- dplyr::filter(pl, SYMBOL!= '') %>% 
       dplyr::transmute(ID = ID, Symbol = SYMBOL)
       
+  }else if (a %in% "GPL14951") {
+    x <- dplyr::filter(pl, !is.na(Entrez_Gene_ID)) %>%
+      dplyr::select('ID', 'Symbol')
   }else {
     stop('not implemented')
   }

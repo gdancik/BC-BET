@@ -38,6 +38,7 @@ jobs:
     - name: Query dependencies
       run: |
           remotes::install_bioc('GEOquery')
+          remotes::install_bioc('impute')
       shell: Rscript {0}
 
     - name: Test run_all.R 

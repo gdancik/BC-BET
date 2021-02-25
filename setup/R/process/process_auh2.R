@@ -3,8 +3,7 @@
 cat('processing auh2...\n\n')
 
 rm(list = ls())
-source('functions/get_gene_expression.R')
-source('functions/generate_boxplot.R')
+source('functions/setup_functions.R')
 
 # specify dataset name and set file names appropriately
 ds_name <- 'auh2'
@@ -29,7 +28,7 @@ GSE5479.stage <- factor(GSE5479.stage, labels = c('nmi', 'mi'))
 GSE5479.grade <- factor(GSE5479.grade, labels = c('lg', 'hg'))
 
 # create clinical data table
-auh2_clinical <- data.frame(id = paste0('S', 1:ncol(auh2.expr)),
+auh2_clinical <- create_clinical_table(id = paste0('S', 1:ncol(auh2.expr)),
                              grade = GSE5479.grade, 
                              stage = GSE5479.stage)
 
