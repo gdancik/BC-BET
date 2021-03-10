@@ -101,7 +101,7 @@ auh1.grade[gradeHi == TRUE] <- "hg"
 
 # create clinical data table
 auh1_clinical <- create_clinical_table(id = colnames(auh1.expr), tumor = auh1.tumor, grade = auh1.grade, stage = auh1.stage)
-View(auh1_clinical)
+#View(auh1_clinical)
 
 # save expression and clinical data
 save(auh1.expr, file = file_expr)
