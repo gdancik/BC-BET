@@ -33,7 +33,7 @@ dfci.expr <- get_expression(dfci.expr, GPL570)
 ### extract clinical data -- limit to 
 GSE31684.p <- pData(dfci[[1]])
 
-View(GSE31684.p)
+#View(GSE31684.p)
 
 ####processed GSE31684 up to here (next step keep line)
 
@@ -42,7 +42,7 @@ View(GSE31684.p)
 #GSE37317.p = GSE37317.p[keep,]
 
 # get stages #
-?rep()
+#?rep()
 dfci.stage = rep(NA, nrow(GSE31684.p))
 dfci.stage[GSE31684.p$characteristics_ch1.4 == "rc_stage: pTa"] <- "nmi"
 dfci.stage[GSE31684.p$characteristics_ch1.4 == "rc_stage: pT1"] <- "nmi"
