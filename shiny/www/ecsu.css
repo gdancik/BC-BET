@@ -1,0 +1,136 @@
+
+#shinyTitle{
+ font-family:Courgette;
+ color:#FFF;
+ font-size:25px;
+}
+
+.welcome {
+    margin-left: 2%;
+    margin-right:2%;
+}
+
+.container-fluid > .navbar-header {
+    margin-right: 2%;
+}
+
+logo{
+  color: #FFFFFF;
+}
+
+td {
+  padding: 5px;
+}
+
+#cancerTypeSetupModal .modal-dialog {
+    width:80%;
+}
+
+.modal-backdrop{
+    background-color:transparent;
+}
+
+.skin-blue .nav {
+  	background-color: rgb(0, 38, 73);
+
+}
+
+.skin-blue {
+  	background-color: rgb(0, 38, 73);
+    /*font-color: green;*/
+}
+
+                  
+.blue-button {
+    background-image: linear-gradient(#04519b,#044687 60%,#033769);
+    color:#FFF;
+}
+
+.width100 {
+    width: 100%;
+}
+
+ 
+ 
+#sidebar, .navbar {
+ 	background-image: linear-gradient(#04519b,#044687 60%,#033769);
+    color:#FFF;
+}
+                  
+ 
+.navbar-header > .navbar-brand {
+	font-family:Courgette;
+    color:#FFF;
+}
+                  
+.navbar-nav > li > a[data-value='hide'] {color: maroon !important;}
+                  
+/* Top level tabs */
+.navbar-default .navbar-nav > .active > a, .navbar-default .navbar-nav > .active > a:focus, .navbar-default .navbar-nav > .active > a:hover {
+	color: white;
+    background-color: maroon
+}
+                  
+                  
+                  
+.navbar-default .navbar-nav > li > a:hover {
+	color: darkred;
+}
+                  
+                  
+.navbar-default .navbar-nav > li > a {
+	color: white;
+}
+                  
+                  
+/* 2nd level (Disease menu) tabs */
+.navbar-default .navbar-nav > li > ul > li[class='active'] > a {
+	color: white;
+    background-color: maroon
+}
+                  
+.navbar-default .navbar-nav > li > ul > li > a {
+ 	color: darkblue;
+}
+                  
+.navbar-default .navbar-nav > .active > li > ul > li > a, .navbar-default .navbar-nav > .active > li > ul > li > a:focus, .navbar-default .navbar-nav > .active > li > ul > li > a:hover {
+    color: white;
+    background-color: maroon
+}
+                  
+.navbar-default .navbar-nav > li >ul > li > a:hover {
+	color: darkred;
+}
+                  
+.shiny-notification {
+	position: fixed;                    
+    top: 15%;
+    left: 65%;
+    font-size: 1.3em;
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 10px; 
+    padding-bottom: 10px;
+    border-style: solid;
+    border-color: black;
+    background-color: #f2dede;
+    opacity: 1;
+    font-weight: bold;
+}
+
+
+#please-wait {
+    position: fixed;
+    top: 0px;
+    width: 97%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, .9);
+    z-index: 100;
+    top: 0px;
+}
+
+#please-wait-progress {
+    height: 35px;
+    position: fixed;
+    top: 30%;
+}

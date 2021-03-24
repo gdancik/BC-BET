@@ -1,0 +1,23 @@
+# BC-BET
+
+library(shiny)
+library(RMariaDB)
+
+source("ui-tabResults.R")
+
+shinyServer(function(input, output, session) {
+
+  enableBookmarking("url")
+  
+  source("server-geneSearch.R", local = TRUE)
+  source("server-bookmarking.R", local = TRUE)
+  
+  shinyjs::disable('btnGeneSearch')
+  shinyjs::runjs("$('#please-wait').addClass('hide');")
+  
+  if (GLOBAL$TEST) {
+    updateQueryString('?_inputs_&geneInput="HRAS"&page="Results"',
+                      mode = 'push')
+  }
+  
+})
