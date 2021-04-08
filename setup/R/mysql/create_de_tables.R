@@ -1,3 +1,10 @@
+library(RMariaDB)
+
+# Connect to employee database using a configuration file,
+# (see tables 4.1 and 4.2 at 
+#    https://dev.mysql.com/doc/refman/8.0/en/option-files.html)
+con <- dbConnect(MariaDB(), group = "BCBET")
+
 #' Carries out a two-sample t-test for vector 'x'
 #'
 #' @param x A vector of expression values
@@ -10,7 +17,7 @@ diff_expr_t_test1 <- function(x, y, groups) {
   res <- t.test(x ~ y) 
   groups <- paste('mean in group', groups)
   logfc <- res$estimate[groups[2]] - res$estimate[groups[1]]
-  cbind(fc = 2**unname(logfc), p_value = res$p.value)
+  cbind(fc = 2**unname(logfc), pvalue = res$p.value)
 }
 
 #' Carries out a two-sample t-test for each row of 'X' 
@@ -25,7 +32,7 @@ diff_expr_t_test1 <- function(x, y, groups) {
 diff_expr_t_test <- function(X, y, groups) {
   res <- apply(X, 1, diff_expr_t_test1, y, groups)
   res <- t(res)
-  colnames(res) <- c('fc', 'p_value')
+  colnames(res) <- c('fc', 'pvalue')
   res
 }
 
@@ -53,20 +60,50 @@ variables <- data.frame(tumor = c('normal', 'tumor'),
 # An example using 500 genes from a single dataset -- delete this when
 # finished
 #############################################################################
-DS <- get_data('mskcc')
-X <- DS$X
-Y <- DS$Y
-v <- 'stage'
+# DS <- get_data('mskcc')
+# X <- DS$X
+# Y <- DS$Y
+# v <- 'stage'
+# 
+#
+create_table <- function(con, table_name, remove = TRUE) {
 
-res <- diff_expr_t_test(X[1:500,], Y[[v]], variables[[v]])
+  if (remove) {
+    dbRemoveTable(con,table_name, fail_if_missing = FALSE)
+  }
+
+
+  dbCreateTable(con, table_name, row.names = NULL, temporary = FALSE,
+              fields = c(gene = 'varchar(40)',
+                         dataset = 'varchar(40)',
+                         fc = 'double', pvalue = 'double') 
+              )
+  alt <- "ALTER TABLE"
+  tabName <- table_name
+  addInd <- "ADD INDEX `ind` (`gene`);"
+  
+  dbExecute(con,paste(alt,tabName,addInd, sep=" ", collapse=NULL) )
+  
+}
+
+
+create_table(con, 'tumor')
+create_table(con, 'grade')
+create_table(con, 'stage')
+# 
+# #results <- dbGetQuery(con, 'SELECT * from stage LIMIT 10 ')
+# #View(results)
+
+
+
 
 
 #############################################################################
 # Loop through all datasets and all variables
 #############################################################################
 
-datasets <- c('mskcc', 'auh2', 'mda2')
-
+datasets <- c('mskcc', 'auh2', 'mda2','blaveri','cnuh','mda1','stransky1','stransky2','uva')
+#dataset2 <- c('auh1')
 # iterate over all datasets
 for (ds in datasets) {
 
@@ -85,10 +122,17 @@ for (ds in datasets) {
       # add data to the appropriate table (e.g.,
       # stage data should be added to 'stage' table)
       
+      dataset <- rep(ds,nrow(res))
+      gene <- row.names(res)
+      
+      res.df <- data.frame(gene,dataset,res)
+      dbAppendTable(con,v, res.df,row.names = NULL)
+  
+      
     }
   }
   
   cat('\n')
 
 }
-
+;jkdbDisconnect(con)

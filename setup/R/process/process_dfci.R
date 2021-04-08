@@ -25,6 +25,10 @@ load("../../data/platforms/GPL570.RData")
 # generate boxplot
 generate_boxplot(dfci.expr, 'dfci', FALSE)
 
+keep <- apply(dfci.expr, 1, sd) > 1e-5
+
+dfci.expr <- dfci.expr[keep,]
+
 # get gene-level expression values
 dfci.expr <- get_expression(dfci.expr, GPL570)
 
@@ -42,7 +46,7 @@ GSE31684.p <- pData(dfci[[1]])
 #GSE37317.p = GSE37317.p[keep,]
 
 # get stages #
-#?rep()
+
 dfci.stage = rep(NA, nrow(GSE31684.p))
 dfci.stage[GSE31684.p$characteristics_ch1.4 == "rc_stage: pTa"] <- "nmi"
 dfci.stage[GSE31684.p$characteristics_ch1.4 == "rc_stage: pT1"] <- "nmi"
