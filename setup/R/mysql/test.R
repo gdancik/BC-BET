@@ -8,9 +8,9 @@ library(RMariaDB)
 #    https://dev.mysql.com/doc/refman/8.0/en/option-files.html)
 con <- dbConnect(MariaDB(), group = "Employees")
 
-# # connect to database without configuration file
+# connect to database without configuration file
 # con <- dbConnect(MariaDB(), user = 'root', password = 'password',
-#                  host = '0.0.0.0', port = '3000',
+#                  host = 'localhost', port = '3000',
 #                  dbname = 'employees')
 
 # test query
@@ -21,3 +21,6 @@ print(employees)
 
 # disconnect from database
 dbDisconnect(con)
+
+
+

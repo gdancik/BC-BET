@@ -73,12 +73,13 @@ attribute <-GSE3167.p$characteristics_ch1
 
 stageTa <- grepl("T[a1]",attribute)
 stageT2 <- grepl("T[234]", attribute)
-stageNormal <- grepl("Normal", attribute)
+#stageNormal <- grepl("Normal", attribute)
 
 
 auh1.stage[stageTa == TRUE] <- "nmi"
-auh1.stage[stageNormal == TRUE] <- "normal"
+#auh1.stage[stageNormal == TRUE] <- "normal"
 auh1.stage[stageT2 == TRUE] <- "mi"
+
 
 ##########################################################
 # get grade
