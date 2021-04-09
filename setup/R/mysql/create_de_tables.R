@@ -102,8 +102,8 @@ create_table(con, 'stage')
 # Loop through all datasets and all variables
 #############################################################################
 
-datasets <- c('mskcc', 'auh2', 'mda2','blaveri','cnuh','mda1','stransky1','stransky2','uva')
-#dataset2 <- c('auh1')
+datasets <- c('mskcc', 'auh2', 'auh1','dfci', 'mda2','blaveri','cnuh','mda1','stransky1','stransky2','uva')
+#dataset2 <- c('dfci')
 # iterate over all datasets
 for (ds in datasets) {
 
@@ -135,4 +135,4 @@ for (ds in datasets) {
   cat('\n')
 
 }
-;jkdbDisconnect(con)
+dbDisconnect(con)

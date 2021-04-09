@@ -25,12 +25,13 @@ load("../../data/platforms/GPL570.RData")
 # generate boxplot
 generate_boxplot(dfci.expr, 'dfci', FALSE)
 
-keep <- apply(dfci.expr, 1, sd) > 1e-5
-
+keep <- apply(dfci.expr, 1, sd) > 0.01
 dfci.expr <- dfci.expr[keep,]
 
 # get gene-level expression values
 dfci.expr <- get_expression(dfci.expr, GPL570)
+
+
 
 #################################################
 
@@ -39,11 +40,7 @@ GSE31684.p <- pData(dfci[[1]])
 
 #View(GSE31684.p)
 
-####processed GSE31684 up to here (next step keep line)
-
-#keep <- GSE37317.p$characteristics_ch1.2 == "histology: urothelial carcinoma"
-#uva.expr = uva.expr[,keep]
-#GSE37317.p = GSE37317.p[keep,]
+#################################################
 
 # get stages #
 
