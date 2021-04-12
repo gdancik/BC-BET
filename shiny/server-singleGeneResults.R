@@ -2,6 +2,10 @@
 getSingleGeneResults <- function(gene) {
   shinyjs::runjs("$('#please-wait').removeClass('hide');")
   
+  
+  myinput <- reactiveValuesToList(input)
+  save(gene, myinput, file = 'a.RData')
+  
   # query bcbet db and generate results (remove Sys.sleep when implemented)
   Sys.sleep(1)
   

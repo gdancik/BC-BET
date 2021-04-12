@@ -33,6 +33,8 @@ SC.stage[SC.stage.T > 1] <- 'mi'
 SC.tumor <- as.double(SC.p$TYPE != 0)
 SC.tumor <- factor(SC.tumor, labels = c('normal', 'tumor'))
 
+SC.grade <- factor(SC.grade, labels = c('lg', 'hg'))
+
 # create clinical data table
 mskcc_clinical <- create_clinical_table(id = colnames(SC.expr), tumor = SC.tumor, 
                              grade = SC.grade, stage = SC.stage,

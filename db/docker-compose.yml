@@ -1,0 +1,41 @@
+# modified from: https://linuxhint.com/lamp_server_docker/
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+  web-server:
+    build:
+      dockerfile: Dockerfile/php.Dockerfile
+      context: .
+    restart: always
+    volumes:
+      - "./html/:/var/www/html/"
+    ports:
+      - "8080:80"
+
+  mysql-server:
+    image: gdancik/bcbet-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: password 
+    volumes:
+      #- /usr/local/mysql:/var/lib/mysql
+      - bcbet-delete-me:/var/lib/mysql
+      # load SQL from ./mysql directory
+      # - ./mysql/:/docker-entrypoint-initdb.d
+    ports:
+      - 3000:3306
+    command: --default-authentication-plugin=mysql_native_password --datadir=/var/lib/mysql-no-volume
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5.0.1
+    restart: always
+    environment:
+      PMA_HOST: mysql-server
+      PMA_USER: root
+      PMA_PASSWORD: password 
+    ports:
+      - "5000:80"
+
+volumes:
+  bcbet-delete-me:

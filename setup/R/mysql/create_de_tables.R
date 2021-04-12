@@ -17,7 +17,7 @@ diff_expr_t_test1 <- function(x, y, groups) {
   res <- t.test(x ~ y) 
   groups <- paste('mean in group', groups)
   logfc <- res$estimate[groups[2]] - res$estimate[groups[1]]
-  cbind(fc = 2**unname(logfc), pvalue = res$p.value)
+  cbind(fc = 2**unname(logfc), pt = res$p.value)
 }
 
 #' Carries out a two-sample t-test for each row of 'X' 
@@ -32,7 +32,7 @@ diff_expr_t_test1 <- function(x, y, groups) {
 diff_expr_t_test <- function(X, y, groups) {
   res <- apply(X, 1, diff_expr_t_test1, y, groups)
   res <- t(res)
-  colnames(res) <- c('fc', 'pvalue')
+  colnames(res) <- c('fc', 'pt')
   res
 }
 
@@ -76,7 +76,7 @@ create_table <- function(con, table_name, remove = TRUE) {
   dbCreateTable(con, table_name, row.names = NULL, temporary = FALSE,
               fields = c(gene = 'varchar(40)',
                          dataset = 'varchar(40)',
-                         fc = 'double', pvalue = 'double') 
+                         fc = 'double', pt = 'double') 
               )
   alt <- "ALTER TABLE"
   tabName <- table_name
@@ -94,15 +94,13 @@ create_table(con, 'stage')
 # #results <- dbGetQuery(con, 'SELECT * from stage LIMIT 10 ')
 # #View(results)
 
-
-
-
-
 #############################################################################
 # Loop through all datasets and all variables
 #############################################################################
 
-datasets <- c('mskcc', 'auh2', 'auh1','dfci', 'mda2','blaveri','cnuh','mda1','stransky1','stransky2','uva')
+datasets <- Sys.glob('../../data/clinical/*.RData')
+datasets <- gsub('\\.RData','',basename(datasets))
+
 #dataset2 <- c('dfci')
 # iterate over all datasets
 for (ds in datasets) {
