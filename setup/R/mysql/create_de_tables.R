@@ -1,4 +1,5 @@
 library(RMariaDB)
+library(AUC)
 
 # Connect to employee database using a configuration file,
 # (see tables 4.1 and 4.2 at 
@@ -14,10 +15,17 @@ con <- dbConnect(MariaDB(), group = "BCBET")
 #' @return A matrix containing the FC and p-value from the t-test
 #'          
 diff_expr_t_test1 <- function(x, y, groups) {
+  
+  w <- wilcox.test(x ~y)
+  y2 <- factor(y, levels = groups, labels = 0:1)
+  keep <- !is.na(y2)
+  a <- auc(roc(x[keep],y2[keep]))
+  
   res <- t.test(x ~ y) 
   groups <- paste('mean in group', groups)
   logfc <- res$estimate[groups[2]] - res$estimate[groups[1]]
-  cbind(fc = 2**unname(logfc), pt = res$p.value)
+  
+  cbind(fc = 2**unname(logfc), pt = res$p.value, auc = a, pw = w$p.value)
 }
 
 #' Carries out a two-sample t-test for each row of 'X' 
@@ -32,7 +40,7 @@ diff_expr_t_test1 <- function(x, y, groups) {
 diff_expr_t_test <- function(X, y, groups) {
   res <- apply(X, 1, diff_expr_t_test1, y, groups)
   res <- t(res)
-  colnames(res) <- c('fc', 'pt')
+  colnames(res) <- c('fc', 'pt', 'auc', 'pw')
   res
 }
 
@@ -65,7 +73,8 @@ variables <- data.frame(tumor = c('normal', 'tumor'),
 # Y <- DS$Y
 # v <- 'stage'
 # 
-#
+# res <- diff_expr_t_test(X[1:100,],Y[[v]],variables[[v]])   
+
 create_table <- function(con, table_name, remove = TRUE) {
 
   if (remove) {
@@ -76,7 +85,8 @@ create_table <- function(con, table_name, remove = TRUE) {
   dbCreateTable(con, table_name, row.names = NULL, temporary = FALSE,
               fields = c(gene = 'varchar(40)',
                          dataset = 'varchar(40)',
-                         fc = 'double', pt = 'double') 
+                         fc = 'double', pt = 'double',
+                         auc = 'double', pw = 'double') 
               )
   alt <- "ALTER TABLE"
   tabName <- table_name
