@@ -2,6 +2,7 @@ on:
   push:
     paths:
       - setup/R/mysql/create_de_tables.R
+      - setup/R/mysql/functions.R
 
 jobs: 
   build:
@@ -42,6 +43,8 @@ jobs:
         run: |
             remotes::install_cran('RMariaDB')
             remotes::install_cran('AUC')
+            remotes::install_cran('dplyr')
+            remotes::install_cran('argparse')
         shell: Rscript {0}
 
       - name: Verify MySQL connection from host
