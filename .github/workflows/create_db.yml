@@ -1,0 +1,69 @@
+name: create_db
+
+on:
+  push:
+    paths:
+      - setup/R/db/create_de_tables.R
+      - setup/R/db/functions.R
+
+jobs: 
+  build:
+  
+    runs-on: ubuntu-latest 
+
+    services:
+      mysql:
+        image: mysql:8.0.19
+        env:
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+            - 3000:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      mongo:
+        image: mongo
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: password
+        ports:
+            - 2000:27017
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v1
+
+      - name: install libcurl
+        run: sudo apt-get install libcurl4-openssl-dev libssl-dev libsasl2-dev
+
+      - name: Install remotes
+        run: |
+            install.packages('remotes')
+        shell: Rscript {0}
+
+      - name: Cache R packages
+        id: cache-packages
+        uses: actions/cache@v2
+        with:
+            path: ${{ env.R_LIBS_USER }}
+            key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-create_de_tables2
+
+      - name: Query dependencies
+        run: |
+            remotes::install_cran('RMariaDB')
+            remotes::install_cran('AUC')
+            remotes::install_cran('dplyr')
+            remotes::install_cran('argparse')
+            remotes::install_cran('mongolite')
+        shell: Rscript {0}
+
+      - name: Verify MySQL connection from host
+        run: |
+          mysql --host 0.0.0.0 --port 3000 -uroot -ppassword -e "CREATE DATABASE bcbet"
+
+      - name: Move MySQL config file
+        run: cd setup/R/db && sudo mv .my.test.cnf ~/.my.cnf 
+
+      - name: Test create_de_tables script
+        run: cd setup/R/db && Rscript create_de_tables.R

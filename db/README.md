@@ -1,39 +1,24 @@
 # BC-BET database
 
-Modified version of [lamp-rm](https://github.com/gdancik/lamp-rm) used for BC-BET mysql and mongo databases (mongo coming soon).
-  
-### Start the webserver by running the following from the *db* directory:
+Modified version of [lamp-rm](https://github.com/gdancik/lamp-rm) used for BC-BET mysql and mongo databases. This is essentially the same as *lamp-rm* except gdancik/bcbet-mysql and gdancik/bcbet-mongo databases are used. 
+
+Simply run the following from this directory to launch mysql and mongo services with BC-BET data.
 
 ```
-docker-compose up
+docker compose up -d
 ```
 
-To run in the background (in a 'detached' state), type
+You may also access the databases through a browser and going to [localhost:8080](localhost:8080). 
+
+Note that changes made to the databases will not persist.
+
+To stop the services run
 
 ```
-docker-compose up -d
+docker-compose down -v
 ```
 
-This will launch the webserver (PHP + MySQL + Mongo) using the gdancik/bcbet-mysql image. 
+For more information, see [lamp-rm](https://github.com/gdancik/lamp-rm)
 
-### Open a web browser and go to [localhost:8080](localhost:8080). 
 
-Click on the links to test database and database functionality.
-
-### To shutdown the docker containers, type the following from the *db* directory:
-
-```
-docker-compose down
-```
-
-### Connecting to the mysql database
-
-To connect to mysql database from your local host, use
-
-```
-user=root
-password=password
-host=0.0.0.0
-port=3000
-```
 
