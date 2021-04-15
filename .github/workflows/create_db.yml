@@ -1,0 +1,58 @@
+on:
+  push:
+    paths:
+      - setup/R/mysql/create_de_tables.R
+      - setup/R/mysql/functions.R
+
+jobs: 
+  build:
+  
+    runs-on: ubuntu-latest 
+
+    services:
+      mysql:
+        image: mysql:8.0.19
+        env:
+          MYSQL_ROOT_PASSWORD: password
+        ports:
+            - 3000:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v1
+
+      - name: install libcurl
+        run: sudo apt-get install libcurl4-openssl-dev
+
+      - name: Install remotes
+        run: |
+            install.packages('remotes')
+        shell: Rscript {0}
+
+      - name: Cache R packages
+        id: cache-packages
+        uses: actions/cache@v2
+        with:
+            path: ${{ env.R_LIBS_USER }}
+            key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-create_de_tables
+
+      - name: Query dependencies
+        run: |
+            remotes::install_cran('RMariaDB')
+            remotes::install_cran('AUC')
+            remotes::install_cran('dplyr')
+            remotes::install_cran('argparse')
+        shell: Rscript {0}
+
+      - name: Verify MySQL connection from host
+        run: |
+          mysql --host 0.0.0.0 --port 3000 -uroot -ppassword -e "CREATE DATABASE bcbet"
+
+      - name: Move config file
+        run: cd setup/R/mysql && sudo mv .my.test.cnf ~/.my.cnf 
+
+      - name: Verify R/MySQL connection
+        run: cd setup/R/mysql && Rscript create_de_tables.R
