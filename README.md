@@ -1,4 +1,4 @@
-# BC-BET ![process_data](https://github.com/gdancik/BC-BET/workflows/process_data/badge.svg) ![platforms](https://github.com/gdancik/BC-BET/workflows/platforms/badge.svg)
+# BC-BET [![update_platforms](https://github.com/gdancik/BC-BET/workflows/platforms/badge.svg)](https://github.com/gdancik/BC-BET/actions/workflows/platforms.yml)[![process_data](https://github.com/gdancik/BC-BET/actions/workflows/process.yml/badge.svg)](https://github.com/gdancik/BC-BET/actions/workflows/process.yml) [![.github/workflows/create_db.yml](https://github.com/gdancik/BC-BET/actions/workflows/create_db.yml/badge.svg)](https://github.com/gdancik/BC-BET/actions/workflows/create_db.yml)
 
 Version 2 (under development) of the *Bladder Cancer Biomarker Evaluation Tool (BC-BET)*.
 
