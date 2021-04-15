@@ -1,4 +1,4 @@
-name: platforms 
+name: update_platforms 
 
 on: 
     push:
