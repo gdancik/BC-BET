@@ -56,6 +56,7 @@ jobs:
             remotes::install_cran('dplyr')
             remotes::install_cran('argparse')
             remotes::install_cran('mongolite')
+
         shell: Rscript {0}
 
       - name: Verify MySQL connection from host
@@ -67,3 +68,9 @@ jobs:
 
       - name: Test create_de_tables script
         run: cd setup/R/db && Rscript create_de_tables.R
+
+      - name: Move config file
+        run: cd setup/R/mysql && sudo mv .my.test.cnf ~/.my.cnf 
+
+      - name: Verify R/MySQL connection
+        run: cd setup/R/mysql && Rscript create_de_tables.R
