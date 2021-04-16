@@ -18,11 +18,6 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: password 
-    volumes:
-      #- /usr/local/mysql:/var/lib/mysql
-      - bcbet-delete-me:/var/lib/mysql
-      # load SQL from ./mysql directory
-      # - ./mysql/:/docker-entrypoint-initdb.d
     ports:
       - 3000:3306
     command: --default-authentication-plugin=mysql_native_password --datadir=/var/lib/mysql-no-volume
@@ -36,6 +31,20 @@ services:
       PMA_PASSWORD: password 
     ports:
       - "5000:80"
+  mongo:
+    image: gdancik/bcbet-mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password 
+    ports:
+      - 2000:27017
 
-volumes:
-  bcbet-delete-me:
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password

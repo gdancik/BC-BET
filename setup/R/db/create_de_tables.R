@@ -1,36 +1,58 @@
 library(RMariaDB)
+library(mongolite)
+
 suppressPackageStartupMessages(library(AUC))
+
+####################################################################
+# Add data to mongo (expression/clinical) and mysql (DE results)
+# databases; designed to work with lamp-rm 
+#   (https://github.com/gdancik/lamp-rm)
+####################################################################
 
 source('functions.R')
 
 library(argparse)
-parser <- ArgumentParser()
+parser <- ArgumentParser(description = paste0("Create databases with expression/clinical data (mongo) and DE results (mysql). ",
+                                              "NOTE: writing to mongo will delete corresponding mysql data")
+)
 
 parser$add_argument("--datasets", default="all",
                     help="comma-separated list of datasets to process [default %(default)s]")
-parser$add_argument("--variables", default="all",
-                   help="comma-separated list of variables to process [default %(default)s]")
+parser$add_argument("--mongo", default = "no",
+                    help = "create mongo db (yes/no) [default %(default)s]")
+parser$add_argument("--var", default="all",
+                   help="comma-separated list of clinical variables to process; must be \"all\" if mongo is \"yes\" [default %(default)s]")
 parser$add_argument("--drop", default="no",
-                    help="drop tables specified by --variables? (yes/no) [default %(default)s]")
+                    help="first drop tables specified by --var? (yes/no) [default %(default)s]")
 parser$add_argument("--replace", default = "no",
                     help = paste0('replace dataset/variable combinations already in db (yes/no)',
                                   'if "yes", we first delete rows from db [default %(default)s]'))
 
 args <- parser$parse_args()
 
+
 #########################################################
 # process arguments and check that arguments are valid
 #########################################################
 
 # check yes/no options
-for (p in c('drop', 'replace')) {
+for (p in c('drop', 'replace', 'mongo')) {
   if (!args[[p]] %in% c('yes','no')) {
     stop('argument must be yes/no: ', p)
   }
 }
 
+if (args$mongo == "yes" && args$var != "all") {
+  stop("var must be 'all' when mongo is 'yes'")
+}
+
+# set up drop/replace:
+# - if we are dropping DE tables, don't replace the data
+# - unless we are using mongo, then we do need to replace
 if (args$drop == 'yes') {
   args$replace = 'no'
+} else if (args$mongo == 'yes') {
+  args$replace = 'yes'
 }
 
 # process --datasets
@@ -55,12 +77,11 @@ variables <- data.frame(tumor = c('normal', 'tumor'),
                         stage = c('nmi', 'mi')
 )
 
-if (args$variables == 'all') {
-  args$variables <- c('tumor', 'grade', 'stage')
+if (args$var == 'all') {
+  args$var <- c('tumor', 'grade', 'stage')
 } else {
-  variables <- dplyr::select(variables, args$variables)
+  variables <- dplyr::select(variables, args$var)
 }
-
 
 
 #############################################################################
@@ -92,10 +113,13 @@ con <- dbConnect(MariaDB(), group = "BCBET")
 # Create tables if they do not exist
 #############################################################################
 
+cat('creating mysql tables if needed...')
 drop <- args$drop == "yes"
 for (v in names(variables)) {
   create_table(con, v, drop = drop)
 }
+cat('done\n')
+
 #############################################################################
 # Loop through all datasets and all variables
 #############################################################################
@@ -104,6 +128,12 @@ for (ds in datasets) {
 
   cat('loading data from: ', ds, '\n')
   DS <- get_data(ds)
+  
+  if (args$mongo == "yes") {
+    cat('  adding ', ds, ' data to mongo...\n')
+    addMongoData(ds, DS)
+  }
+  
   X <- DS$X
   Y <- DS$Y
 
@@ -112,27 +142,28 @@ for (ds in datasets) {
   
     # if we are replacing the data, then we need to delete it
     if (args$replace == "yes") {
+      cat('  deleting ', ds, ' from mysql table ', v, '...\n')
       statement <- paste0('DELETE FROM ', v, ' where dataset = "', ds, '"')
       dbExecute(con, statement)
     } else { # otherwise skip if data exists
      qry <- paste0('select * from ', v, ' where dataset="',ds,'" limit 1')
      res <- dbGetQuery(con, qry)
      if (nrow(res) > 0) {
-       cat('db already contains ', ds, '(', v, ') -- skipping\n' )
+       cat('  db already contains ', ds, '(', v, ') -- skipping\n' )
        next
      }
     }
     
     if (!is.null(Y[[v]])) {
-      cat('DE analysis for ', ds, ':', v, '\n')
+      cat('  DE analysis for ', ds, ':', v, '\n')
       res <- diff_expr_t_test(X, Y[[v]], variables[[v]])
       
       dataset <- rep(ds,nrow(res))
       gene <- row.names(res)
       
       res.df <- data.frame(gene,dataset,res)
+      cat('  adding results to mysql ...\n')
       dbAppendTable(con,v, res.df,row.names = NULL)
-  
     }
   }
   
