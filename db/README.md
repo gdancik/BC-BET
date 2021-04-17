@@ -20,5 +20,12 @@ docker-compose down -v
 
 For more information, see [lamp-rm](https://github.com/gdancik/lamp-rm)
 
+## Exporting BC-BET
 
+Run the script
 
+```
+export-bcbet.sh mongo-directory
+```
+
+to export the database for use with *lamp-rm*. This script exports mysql data to the volume *lamp-rm_mongo-data* and copies the mongo data dump (from /docker-entrypoint-initdb.d) to the specified *mongo-directory* (that should be in *lamp-rm*).  
