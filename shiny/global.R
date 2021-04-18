@@ -1,7 +1,7 @@
 # global variables and functions
 GLOBAL <- list(gene = NULL, submitType = 'qry', 
                DEBUG = TRUE,
-               TEST = TRUE)
+               TEST = FALSE)
 
 setGLOBAL <- function(name, x) {
   if (!name %in% c('gene','submitType')) {

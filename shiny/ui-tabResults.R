@@ -13,13 +13,20 @@ tabSummary <- tabPanel('Summary',
     )
 )
 
+# template displaying one graph currently
+tabVisualization <- tabPanel('Visualization',
+    fluidRow( column(4,
+        plotOutput('plotDataset'))
+    )
+)                        
+
 # Results page
 tabResults <- tabPanel("Results",
       uiOutput('ResultsHeader'), hr(),
       fluidRow(column(style='border-right: 1px solid',width = 12,
           tabsetPanel(id = "ResultsPage",
               tabSummary,
-              tabPanel('Graphs'),
+              tabVisualization, 
               tabPanel('Download')
           ))
       )
