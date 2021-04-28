@@ -5,12 +5,12 @@ getSingleGeneResults <- function(gene) {
   myinput <- reactiveValuesToList(input)
   
   # query bcbet db and generate results (remove Sys.sleep when implemented)
-  Sys.sleep(1)
+#  Sys.sleep(1)
   
   catn('PROCESSING GENE: ', gene)
   
   output$ResultsHeader <- renderUI({
-    h3('Patient Analysis now for', gene)
+    h4('Patient Analysis for', gene, style = 'margin:0px')
   })
   
   output$plotSummary <- renderPlot({

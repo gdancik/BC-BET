@@ -26,4 +26,3 @@ catn <- function(...) {
   cat(..., '\n')
 }
 
-

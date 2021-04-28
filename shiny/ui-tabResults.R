@@ -14,19 +14,19 @@ tabSummary <- tabPanel('Summary',
 )
 
 # template displaying one graph currently
-tabVisualization <- tabPanel('Visualization',
-    fluidRow( column(4,
-        plotOutput('plotDataset'))
-    )
+tabPlots <- navbarMenu('Plots',
+                       tabPanel('Tumor',uiOutput('graphOutputTumor')),
+                       tabPanel('Grade', uiOutput('graphOutputGrade')),
+                       tabPanel('Stage', uiOutput('graphOutputStage'))
 )                        
 
 # Results page
 tabResults <- tabPanel("Results",
-      uiOutput('ResultsHeader'), hr(),
+      uiOutput('ResultsHeader'), hr(style = 'margin-top:10px; margin-bottom:10px'),
       fluidRow(column(style='border-right: 1px solid',width = 12,
           tabsetPanel(id = "ResultsPage",
               tabSummary,
-              tabVisualization, 
+              tabPlots, 
               tabPanel('Download')
           ))
       )
