@@ -101,7 +101,7 @@ td {
 .navbar-default .navbar-nav > li >ul > li > a:hover {
 	color: darkred;
 }
-                  
+
 .shiny-notification {
 	position: fixed;                    
     top: 15%;
@@ -118,7 +118,6 @@ td {
     font-weight: bold;
 }
 
-
 #please-wait {
     position: fixed;
     top: 0px;
@@ -133,4 +132,18 @@ td {
     height: 35px;
     position: fixed;
     top: 30%;
+}
+
+
+#plotsPage {
+    margin-top: 5px;
+    background-color: aliceblue;
+}
+
+#ResultsPage {
+    background-color: #0000000a;
+}
+
+.plotHeader {
+    margin: 15px;
 }

@@ -10,7 +10,7 @@ getSingleGeneResults <- function(gene) {
   catn('PROCESSING GENE: ', gene)
   
   output$ResultsHeader <- renderUI({
-    h4('Patient Analysis for', gene, style = 'margin:0px')
+    h4('Patient Analysis for', gene, style = 'margin:0px; color:darkred;')
   })
   
   output$plotSummary <- renderPlot({
