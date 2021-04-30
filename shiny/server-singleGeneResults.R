@@ -22,3 +22,11 @@ getSingleGeneResults <- function(gene) {
   shinyjs::runjs("$('#please-wait').addClass('hide');")
 }
 
+
+observeEvent(input$tabSummaryTable, {
+  cat('clicked on: ', input$tabSummaryTable, '...\n')
+
+  # TO DO: display appropriate table
+  
+})
+

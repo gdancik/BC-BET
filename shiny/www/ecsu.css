@@ -135,9 +135,13 @@ td {
 }
 
 
-#plotsPage {
+#plotsPage, #tabSummaryTable {
     margin-top: 5px;
     background-color: aliceblue;
+}
+
+#tabSummaryTable {
+    margin-bottom: 10px;
 }
 
 #ResultsPage {
