@@ -53,7 +53,7 @@ os.time <- as.double(gsub("survival \\(mo\\): ","", p$characteristics_ch1.10))
 
 # create clinical data table
 mda1_clinical <- create_clinical_table(id = rownames(p),
-                            os.time = os.time, os.outcome = os.outcome)
+                            os_time = os.time, os_outcome = os.outcome)
  
 # save expression and clinical data
 save(mda1.expr, file = file_expr)

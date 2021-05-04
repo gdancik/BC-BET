@@ -35,10 +35,10 @@ stage[grep("[2-4]", GSE13507.stage.T)] <- "mi"
 cnuh_clinical <- create_clinical_table(id = rownames(GSE13507.p),
                       tumor = tumor, grade = grade,
                       stage = stage,
-                      dss.time = GSE13507.DSS.time,
-                      dss.outcome = GSE13507.DSS.outcome,
-                      os.time = GSE13507.OS.time,
-                      os.outcome = GSE13507.OS.outcome)
+                      dss_time = GSE13507.DSS.time,
+                      dss_outcome = GSE13507.DSS.outcome,
+                      os_time = GSE13507.OS.time,
+                      os_outcome = GSE13507.OS.outcome)
 
 # save data
 save(cnuh.expr, file = file_expr)

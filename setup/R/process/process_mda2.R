@@ -56,8 +56,8 @@ outcome[tmp == "os censor: censored"] = 0
 # create clinical data table
 mda2_clinical <- create_clinical_table(id = colnames(mda2.expr), 
                             stage = stage,
-                            os.time = time,
-                            os.outcome = outcome)
+                            os_time = time,
+                            os_outcome = outcome)
 
 # save expression and clinical data
 save(mda2.expr, file = file_expr)

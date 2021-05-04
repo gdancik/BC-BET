@@ -1,3 +1,5 @@
+library(survival)
+
 #' Carries out a two-sample t-test for vector 'x'
 #'
 #' @param x A vector of expression values
@@ -36,6 +38,44 @@ diff_expr_t_test <- function(X, y, groups) {
   res
 }
 
+#' Survival analysis using coxph
+#'
+#' @param x A vector of expression values
+#' @param times A vector of survival times
+#' @param outcomes A vector of outcomes (0 = uncensored; 1 = censored)
+#' @return A matrix containing the HR and p-values from the continuous model and 
+#'         low/high expressors relative to median 
+coxph_test1 <- function(x, times, outcomes) {
+  keep <- !is.na(x) & !is.na(times) & !is.na(outcomes)
+  x <- x[keep]; times <- times[keep]; outcomes <- outcomes[keep]
+  
+  mod_med <- coxph(Surv(times, outcomes) ~ x >= median(x))
+  s_med <- summary(mod_med)
+  
+  mod_cont <- coxph(Surv(times, outcomes)~x)
+  s_cont <- summary(mod_cont)
+  
+  cbind(hr_med = s_med$coefficients[2],
+        p_med = s_med$logtest[3],
+        hr_continuous = s_cont$coefficients[2], 
+        p_continuous = s_cont$logtest[3])
+}
+
+#' Carries out a coxph survival analysis for each row of 'X' 
+#'
+#' @param X A matrix of expression values
+#' @param times A vector of survival times
+#' @param outcomes A vector of outcomes (0 = uncensored; 1 = censored)
+#' @return A matrix where each row contains the HR and p-values 
+#'         corresponding to each row of X
+#' 
+coxph_test <- function(X, times, outcomes) {
+  res <- apply(X, 1, coxph_test1, times, outcomes)
+  res <- t(res)
+  colnames(res) <- c('hr_med', 'p_med', 'hr_continuous', 'p_continuous')
+  res
+}
+
 #' Loads data from specified datasets
 #'
 #' @param ds The name of the datasets
@@ -47,7 +87,6 @@ get_data <- function(ds) {
   
   list(X = get(paste0(ds,'.expr')),
        Y = get(paste0(ds, '_clinical')))
-  
 }
 
 #' Checks whether processed and clinical data workspaces exist
@@ -69,9 +108,10 @@ check_data <- function(ds) {
 #' @param con The connection to the database
 #' @table_name The name of the table
 #' @drop if TRUE, the table is first dropped 
+#' @survival if TRUE, creates a table for survival rather than DE results
 #' @return a logical vector containing TRUE if processed and clinical data exists
 #'
-create_table <- function(con, table_name, drop = TRUE) {
+create_table <- function(con, table_name, drop = TRUE, survival = FALSE) {
   
   if (drop) {
     dbRemoveTable(con,table_name, fail_if_missing = FALSE)
@@ -79,12 +119,22 @@ create_table <- function(con, table_name, drop = TRUE) {
   if (dbExistsTable(con, table_name)) {
     return()
   }
+  
+  fields <- c(gene = 'varchar(40)',
+              dataset = 'varchar(40)',
+              fc = 'double', pt = 'double',
+              auc = 'double', pw = 'double')
+  
+  if (survival) {
+    fields <- c(gene = 'varchar(40)',
+                dataset = 'varchar(40)',
+                hr_med = 'double', p_med = 'double',
+                hr_continuous = 'double', p_continuous = 'double')
+  }
+  
   dbCreateTable(con, table_name, row.names = NULL, temporary = FALSE,
-                fields = c(gene = 'varchar(40)',
-                           dataset = 'varchar(40)',
-                           fc = 'double', pt = 'double',
-                           auc = 'double', pw = 'double') 
-  )
+                fields = fields)
+  
   alt <- "ALTER TABLE"
   tabName <- table_name
   addInd <- "ADD INDEX `ind` (`gene`);"

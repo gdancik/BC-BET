@@ -88,13 +88,13 @@ generate_boxplot <- function(X, name, save.file = TRUE) {
 
 create_clinical_table <- function(...) {
   d <- data.frame(...)
-  cn <- colnames(d)
-  if ('dss_outcome' %in% cn) {
-      d <- dplyr::mutate(d, ba_time = dss_time, ba_outcome = dss_outcome)
-  } else if ('os_outcome' %in% cn) {
-      d <- dplyr::mutate(d, ba_time = os_time, ba_outcome = os_outcome)
-  } else if ('rfs_outcome' %in% cn){
-      d <- dplyr::mutate(d, ba_time = rfs_time, ba_outcome = rfs_outcome)
-  }
+  # cn <- colnames(d)
+  # if ('dss_outcome' %in% cn) {
+  #     d <- dplyr::mutate(d, ba_time = dss_time, ba_outcome = dss_outcome)
+  # } else if ('os_outcome' %in% cn) {
+  #     d <- dplyr::mutate(d, ba_time = os_time, ba_outcome = os_outcome)
+  # } else if ('rfs_outcome' %in% cn){
+  #     d <- dplyr::mutate(d, ba_time = rfs_time, ba_outcome = rfs_outcome)
+  # }
   d
 }

@@ -46,8 +46,8 @@ Blaveri.grade[grep("HG",Blaveri.p$grade)] = 'hg'
 blaveri_clinical <- create_clinical_table(id = colnames(blaveri.expr), 
                                grade = Blaveri.grade,
                                stage = Blaveri.stage,
-                               os.time = Blaveri.p$Survival..mos.,
-                               os.outcome = as.integer(Blaveri.p$Survival_Status)-1)
+                               os_time = Blaveri.p$Survival..mos.,
+                               os_outcome = as.integer(Blaveri.p$Survival_Status)-1)
 
 # save expression and clinical data
 save(blaveri.expr, file = file_expr)
