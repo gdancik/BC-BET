@@ -1,6 +1,8 @@
 library(mongolite)
 library(ggplot2)
 library(tidyr)
+library(survival)
+library(GGally)
 
 source('graphPanelFunctions.R')
 
@@ -12,7 +14,7 @@ mongo_connect <- function(collection, user = "root", pass = "password",
 }
 
 # returns a data frame combining expression with 
-# clinical data specified by 'plotType', e.g., 'stage'.
+# clinical data specified by 'clin_column', e.g., 'stage'.
 get_mongo_df <- function(ds, gene_qry, clin_column = NULL) {
   m <- mongo_connect(paste0(ds, '_expr'))
   x <- m$find(gene_qry)
@@ -25,11 +27,20 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL) {
     return(df)
   }
   
-  if (length(x$expr[[1]]) == 0 || is.null(y[[clin_column]])) {
+  if (length(x$expr[[1]]) == 0 || any(!clin_column%in%colnames(y))) {
     return(NULL)
   }
   
-  data.frame(x = x$expr[[1]], y = y[[clin_column]]) %>% drop_na()
+  if (length(clin_column) == 1) {
+    df <- data.frame(x = x$expr[[1]], y = y[,clin_column])
+  } else {
+    df <- data.frame(x = x$expr[[1]],
+                     y1 = y[,clin_column[1]],
+                     y2 = y[,clin_column[2]])
+  }
+
+  df %>% drop_na()
+    
 }
 
 bcbet_boxplot <- function(df,ds, reverse = FALSE, upper = TRUE) {
@@ -54,6 +65,28 @@ bcbet_boxplot <- function(df,ds, reverse = FALSE, upper = TRUE) {
   
   g1
   
+}
+
+
+bcbet_km <- function(df, ds) {
+  
+  cut = median(df$x)
+  upper = "upper 50%"; lower = "lower 50%"
+  
+  ## split into high and low groups using appropriate cutoff ## 
+  df$expression <- factor(df$x >= median(df$x), labels = c(lower,upper))
+  
+  ## plot graph ### ggplot2/GGally form
+  km.group1 = survfit(Surv(y1, y2) ~ expression, data = df)
+  col <- c('darkblue', 'darkred')
+  
+  ggsurv(km.group1, 
+                    main = ds, 
+                    surv.col = col, cens.col = col,
+                    size.est = 1) +
+    ggplot2::coord_cartesian(ylim = c(0, 1)) + theme_classic() +
+    labs(x = 'Time (months)', ylab = 'Survival probability')
+    
 }
 
 # generate plots of plotType (e.g., 'stage') for rendering
@@ -87,7 +120,7 @@ generatePlots <- function(plotType, graphOutputId) {
   qry <- paste0('{"gene": "', gene, '"}')
   
   count <- 1
-  myplots <- vector(mode = 'list', 4)
+  myplots <- vector(mode = 'list', length = 1)
   
   upper <- reverse <- FALSE
   if (plotType %in% c("stage", "grade")) {
@@ -97,7 +130,14 @@ generatePlots <- function(plotType, graphOutputId) {
 
   for (ds in datasets) {
     
-    df <- get_mongo_df(ds, qry, plotType)
+    columns <- plotType
+    if (plotType == 'survival') {
+      columns <- c('dss_time', 'dss_outcome')
+    }
+    
+    
+    cat("getting data for: ", ds, "...\n")
+    df <- get_mongo_df(ds, qry, columns)
     
     if (is.null(df) || nrow(df) == 0) {
       next
@@ -107,12 +147,32 @@ generatePlots <- function(plotType, graphOutputId) {
     # upper,'/',reverse,'\n')
     # 
   
-    myplots[[count]] <- bcbet_boxplot(df, ds, upper = upper, reverse = reverse)
+    cat('  plotType ', plotType, ' for ', ds, '...\n')
+    
+    if (plotType == 'survival') {
+      cat('  assigning plot to myplots')
+      myplots[[count]] <- bcbet_km(df, ds)
+    } else {
+      myplots[[count]] <- bcbet_boxplot(df, ds, upper = upper, reverse = reverse)
+    }
     
     count <- count + 1
   }
   
-  # create appropriate number of plot containers
+  # create appropriate number of plot containers, including legend for
+  # survival
+  
+  
+  if (plotType == 'survival' && count > 0) {
+    count <- count + 1
+
+    myplot1 <- myplots[[1]] 
+    mylegend <- cowplot::get_legend(myplot1)
+
+    myplots <- lapply(myplots, function(x) x + theme(legend.position = 'none'))
+    myplots[[count-1]] <- plot_grid(mylegend)
+  }
+  
   output[[graphOutputId]] <- renderUI({
     createPlotGrid(count-1, plot_prefix)
   })
@@ -141,11 +201,13 @@ stagePlots <- reactive({
   generatePlots('stage', 'graphOutputStage')
 })
 
+survivalPlots <- reactive({
+  generatePlots('survival', 'graphOutputSurvival')
+})
 
-
-observeEvent(list(input$ResultsPage, input$plotsPage), {
+observeEvent(list(input$resultsPage, input$plotsPage), {
   
-  if (input$ResultsPage != "Plots") {
+  if (input$resultsPage != "Plots") {
     return()
   }
   
@@ -158,6 +220,8 @@ observeEvent(list(input$ResultsPage, input$plotsPage), {
   } else if (input$plotsPage == 'Stage') {
     stagePlots()
     return()
+  } else if (input$plotsPage == 'Survival') {
+    survivalPlots()
   }
   
 }, ignoreInit = TRUE)

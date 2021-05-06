@@ -8,6 +8,7 @@ if [ "$#" -ne 0 ]; then
     echo "Usage: save-db-docker"
     echo
     echo "Creates gdancik/bcbet-mysql and gdancik/bcbet-mongo images from lamp-rm volumes and pushes to dockerhub"
+    echo "Note that lamp-rm should be down for this to work"
     exit
 fi
 

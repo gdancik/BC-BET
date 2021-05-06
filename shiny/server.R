@@ -9,8 +9,6 @@ source("ui-tabResults.R")
 
 shinyServer(function(input, output, session) {
 
-  enableBookmarking("url")
-  
   source("server-geneSearch.R", local = TRUE)
   source("server-bookmarking.R", local = TRUE)
   source("server-plots.R", local = TRUE)

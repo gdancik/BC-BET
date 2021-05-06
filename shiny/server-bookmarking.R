@@ -44,29 +44,52 @@ not_identical <- function(x,y) {
   !identical(x,y)
 }
 
-# returns TRUE if query should be updated (if there is a
+# returns TRUE if query is updated (if there is a
 # difference between relevant inputs and current query string)
 update_bookmark <- function() {
   
+  catn('in update bookmark with submitType = ', GLOBAL$submitType)
   if (GLOBAL$submitType == 'processing_qry') {
     setGLOBAL('submitType', 'qry')
     return(FALSE)
-  }
-  
+  } 
+
   s <- isolate(getQueryStringNoQuotes())
   r <- isolate(reactiveValuesToList(input))
   
   # check page parameter
   params <- c('page')
+  params <- GLOBAL$url_params
+  
+  needs_update <- FALSE
+
   for (p in params) {
     catn('\t', p, ':', 's=',s[[p]], ', r=', r[[p]])
     if (not_identical(s[[p]], r[[p]])) {
-      return (TRUE)
+      catn('update params since difference for: ', p)
+      needs_update <- TRUE
+      break
     }
   }
   
   # check for change in gene
-  if (not_identical(s$geneInput, GLOBAL$gene)) {
+  if (needs_update || not_identical(s$geneInput, GLOBAL$gene)) {
+
+    catn('\tupdating bookmark')
+    myurl <- '?_inputs_'
+    for (p in GLOBAL$url_params) {
+      if (GLOBAL$submitType == 'qry' && p == 'geneInput') {
+        catn('\tsetting ', p, 'to: ', s[[p]])
+        myurl <- paste0(myurl, '&',p,'="',s[[p]], '"')
+      } else {
+        catn('\tsetting ', p, 'to: ', input[[p]])
+        myurl <- paste0(myurl, '&',p,'="',input[[p]], '"')
+      }
+    }
+    catn('updating query string: ', myurl)
+    catn('')
+    updateQueryString(myurl, mode = 'push')
+    
     return(TRUE)
   }
   
@@ -74,17 +97,27 @@ update_bookmark <- function() {
   
 }
  
+observeEvent(input$resultsPage, {
+  update_bookmark()
+  
+})
 ###############################################################
 # Handles bookmarking following changes to relevant inputs
 ###############################################################
 observeEvent(input$page , {
 
   catn('respond to input$page...')
+  catn('gene=', GLOBAL$submitType, '...\n')
+  
+  # set url_params according to current page
+  if (input$page != 'Results') {
+    removeGLOBALurlExcept('page','geneInput')
+  } else {
+    setGLOBAL('url_params', c('geneInput', 'page', 'resultsPage'))
+  }
   
   if (update_bookmark()) {
-    catn('\tupdate bookmark')
-    session$doBookmark()
-    return()
+        return()
   }
   
   # We may end up here after processing a 
@@ -100,11 +133,11 @@ observeEvent(input$page , {
   
 }, ignoreInit = TRUE)
 
-onBookmarked(function(url) {
-  url <- gsub('.+\\?', '?', url)
-  cat('onBookarked, url: ', url, '\n')
-  updateQueryString(url, mode = 'push')
-})
+# onBookmarked(function(url) {
+#   url <- gsub('.+\\?', '?', url)
+#   cat('onBookarked, url: ', url, '\n')
+#   updateQueryString(url, mode = 'push')
+# })
 
 ###############################################################
 # Handles changes to the query string
@@ -113,10 +146,27 @@ onBookmarked(function(url) {
 # processes query
 processQuery <- function() {
   s <- getQueryStringNoQuotes()
+  print(names(s))
+  
+  cat('\n\n')
+  
+  if (length(s) == 0 || all(names(s)%in%c('_inputs_', 'page'))) {
+    return()
+  }
+  
   u <- unlist(s)
   q <- paste0(names(u),'=',u, collapse = '&')
   
   catn("process query: ", q)
+
+  if (is.null(s$geneInput) || s$geneInput == '') {
+    catn("resetting global...")
+    #wait()
+    resetGLOBAL()
+    catn('update query string to: /')
+    updateQueryString('/')
+    return()
+  }
   
   r <- isolate(reactiveValuesToList(input))
   
@@ -181,18 +231,4 @@ observeEvent(input$btnReprocessQuery,{
   processQuery()
 })
 
-
-
-# bookmark only inputs based on 'x', along with 'page'
-# dependendent on current input list
-setBookmarkInclude <-function(x) {
-  setBookmarkExclude(
-    setdiff(  c(names(isolate(reactiveValuesToList(input))),
-                "ResultsPage"),
-            c('page', x)
-    )
-  )
-}
-
-setBookmarkInclude(NULL)
 

@@ -5,7 +5,7 @@ getSingleGeneResults <- function(gene) {
   myinput <- reactiveValuesToList(input)
   
   # query bcbet db and generate results (remove Sys.sleep when implemented)
-#  Sys.sleep(1)
+  #  Sys.sleep(1)
   
   catn('PROCESSING GENE: ', gene)
   
@@ -17,7 +17,9 @@ getSingleGeneResults <- function(gene) {
     plot(1:10)
   })
   
-  output$tableSummary <- renderTable(iris)
+  output$tableSummary <- renderTable({
+    iris
+  })
   
   shinyjs::runjs("$('#please-wait').addClass('hide');")
 }

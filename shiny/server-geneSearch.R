@@ -40,12 +40,16 @@ observeEvent(input$btnGeneSearch,{
 
 
 resetResultsPage <- function() {
-  setBookmarkInclude('geneInput')
+  
+  #resetGLOBAL()
+  #catn('inputs are: ', names(reactiveValuesToList(input)))
+  
   catn("removing tab...")
   removeTab('page', 'Results')
   catn('inserting tab...')
+  
   insertTab('page', tabResults, "Home", position = "after", select = TRUE)
- 
+
 }
 
 # on multi gene search
