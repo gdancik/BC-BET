@@ -4,6 +4,8 @@ Modified version of [lamp-rm](https://github.com/gdancik/lamp-rm) used for BC-BE
 
 Simply run the following from this directory to launch mysql and mongo services with BC-BET data.
 
+Note: gdancik/bcbet-mysql is currently not needed and is commented out.
+
 ```
 docker compose up -d
 ```
