@@ -103,44 +103,6 @@ check_data <- function(ds) {
   res
 }
 
-#' creates a table in the database, if the table does not exist
-#'
-#' @param con The connection to the database
-#' @table_name The name of the table
-#' @drop if TRUE, the table is first dropped 
-#' @survival if TRUE, creates a table for survival rather than DE results
-#' @return a logical vector containing TRUE if processed and clinical data exists
-#'
-create_table <- function(con, table_name, drop = TRUE, survival = FALSE) {
-  
-  if (drop) {
-    dbRemoveTable(con,table_name, fail_if_missing = FALSE)
-  }
-  if (dbExistsTable(con, table_name)) {
-    return()
-  }
-  
-  fields <- c(gene = 'varchar(40)',
-              dataset = 'varchar(40)',
-              fc = 'double', pt = 'double',
-              auc = 'double', pw = 'double')
-  
-  if (survival) {
-    fields <- c(gene = 'varchar(40)',
-                dataset = 'varchar(40)',
-                hr_med = 'double', p_med = 'double',
-                hr_continuous = 'double', p_continuous = 'double')
-  }
-  
-  dbCreateTable(con, table_name, row.names = NULL, temporary = FALSE,
-                fields = fields)
-  
-  alt <- "ALTER TABLE"
-  tabName <- table_name
-  addInd <- "ADD INDEX `ind` (`gene`);"
-  
-  dbExecute(con,paste(alt,tabName,addInd, sep=" ", collapse=NULL) )
-}
 
 ########################################################################
 # mongo functions
