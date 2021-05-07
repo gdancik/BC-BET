@@ -10,13 +10,17 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # load expression and platform data
 load("../../data/original/GSE13507.RData")
-load("../../data/platforms/GPL6102.RData")
 
-# generate boxplot
-generate_boxplot(GSE13507.expr, 'CNUH')
-
-# get gene-level expression values
-cnuh.expr <- get_expression(GSE13507.expr, GPL6102)
+if (PROCESS_EXPRESSION) {
+  load("../../data/platforms/GPL6102.RData")
+  
+  # generate boxplot
+  generate_boxplot(GSE13507.expr, 'CNUH')
+  
+  # get gene-level expression values
+  cnuh.expr <- get_expression(GSE13507.expr, GPL6102)
+  save(cnuh.expr, file = file_expr)
+}
 
 # get clinical information for tumor
 
@@ -41,5 +45,4 @@ cnuh_clinical <- create_clinical_table(id = rownames(GSE13507.p),
                       os_outcome = GSE13507.OS.outcome)
 
 # save data
-save(cnuh.expr, file = file_expr)
 save(cnuh_clinical, file = file_clinical)

@@ -37,35 +37,40 @@ tumor[tumor == "bladder carcinoma"] = "tumor"
 stransky_clinical <- create_clinical_table(id = paste0("P", E.TABM.147.p$Source.Name), 
                                 tumor = tumor, grade = grade, 
                                 stage = stage)
-                    
-# Dataset contains two platforms
-#   samples 1 - 31 are on U95Av (GPL91)
-#   samples 32 - 62 are on U95Av2 (GPL8300)
 
-# However, both platforms are identical in this dataset, so
-# we will just use GPL91
+if (PROCESS_EXPRESSION) {                    
+  # Dataset contains two platforms
+  #   samples 1 - 31 are on U95Av (GPL91)
+  #   samples 32 - 62 are on U95Av2 (GPL8300)
 
-# get gene-level expression values
-stransky.expr <- get_expression(E.TABM.147.expr, GPL91)
+  # However, both platforms are identical in this dataset, so
+  # we will just use GPL91
+
+  # get gene-level expression values
+  stransky.expr <- get_expression(E.TABM.147.expr, GPL91)
+
+}
 
 # split into 2 datasets
-
 i1 <- 1:31
 i2 <- 32:62
 
-stransky1.expr <- stransky.expr[,i1]
-stransky2.expr <- stransky.expr[,i2]
+if (PROCESS_EXPRESSION) {
+  stransky1.expr <- stransky.expr[,i1]
+  stransky2.expr <- stransky.expr[,i2]
+  
+  # generate boxplots
+  generate_boxplot(stransky1.expr, 'stransky1')
+  generate_boxplot(stransky2.expr, 'stransky2')
+
+  save(stransky1.expr, file = file1_expr)
+  save(stransky2.expr, file = file2_expr)
+  
+}
 
 stransky1_clinical <- stransky_clinical[i1,]
 stransky2_clinical <- stransky_clinical[i2,]
 stransky2_clinical$tumor <- NULL # remove since all are tumors
 
-# generate boxplots
-generate_boxplot(stransky1.expr, 'stransky1')
-generate_boxplot(stransky2.expr, 'stransky2')
-
-# save expression and clinical data
-save(stransky1.expr, file = file1_expr)
-save(stransky2.expr, file = file2_expr)
 save(stransky1_clinical, file = file1_clinical)
 save(stransky2_clinical, file = file2_clinical)

@@ -18,20 +18,22 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 dfci <- getGEO('GSE31684')
 #View(dfci)
 
-dfci.expr <- exprs(dfci[[1]])
+if (PROCESS_EXPRESSION) {
+  dfci.expr <- exprs(dfci[[1]])
 
-load("../../data/platforms/GPL570.RData")
+  load("../../data/platforms/GPL570.RData")
 
-# generate boxplot
-generate_boxplot(dfci.expr, 'dfci', FALSE)
+  # generate boxplot
+  generate_boxplot(dfci.expr, 'dfci', FALSE)
 
-keep <- apply(dfci.expr, 1, sd) > 0.01
-dfci.expr <- dfci.expr[keep,]
+  keep <- apply(dfci.expr, 1, sd) > 0.01
+  dfci.expr <- dfci.expr[keep,]
 
-# get gene-level expression values
-dfci.expr <- get_expression(dfci.expr, GPL570)
-
-
+  # get gene-level expression values
+  dfci.expr <- get_expression(dfci.expr, GPL570)
+  save(dfci.expr, file = file_expr)
+  
+}
 
 #################################################
 
@@ -61,7 +63,4 @@ dfci_clinical <- create_clinical_table(id = rownames(GSE31684.p), grade = dfci.g
 
 #View(dfci_clinical)
 
-# save expression and clinical data
-save(dfci.expr, file = file_expr)
 save(dfci_clinical, file = file_clinical)
-
