@@ -12,17 +12,21 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # load expression and platform data
 load("../../data/original/Sanchez.RData")
-load("../../data/platforms/GPL96.RData")
 
-# we need to take the log for this one
-SC.expr <- log2(SC.expr)
-SC.expr <- as.matrix(SC.expr)
+if (PROCESS_EXPRESSION) {
+  load("../../data/platforms/GPL96.RData")
 
-# generate boxplot
-generate_boxplot(SC.expr, 'MSKCC')
+  # we need to take the log for this one
+  SC.expr <- log2(SC.expr)
+  SC.expr <- as.matrix(SC.expr)
 
-# get gene-level expression values
-mskcc.expr <- get_expression(SC.expr, GPL96)
+  # generate boxplot
+  generate_boxplot(SC.expr, 'MSKCC')
+
+  # get gene-level expression values
+  mskcc.expr <- get_expression(SC.expr, GPL96)
+  save(mskcc.expr, file = file_expr)
+}
 
 ### extract clinical data
 SC.stage = rep(NA,length(SC.stage.T))
@@ -41,6 +45,4 @@ mskcc_clinical <- create_clinical_table(id = colnames(SC.expr), tumor = SC.tumor
                              dss_time = SC.OS.time,
                              dss_outcome = SC.OS.outcome)
 
-# save expression and clinical data
-save(mskcc.expr, file = file_expr)
 save(mskcc_clinical, file = file_clinical)

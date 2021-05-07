@@ -15,22 +15,26 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 # load expression and platform data
 
 UVA <- getGEO('GSE37317')
-
 uva.expr <- exprs(UVA[[1]])
 
-load("../../data/platforms/GPL96.RData")
+if (PROCESS_EXPRESSION) {
 
-# generate boxplot
-generate_boxplot(uva.expr, 'UVA')
+  load("../../data/platforms/GPL96.RData")
 
-# get gene-level expression values
-uva.expr <- get_expression(uva.expr, GPL96)
+  # generate boxplot
+  generate_boxplot(uva.expr, 'UVA')
+
+  # get gene-level expression values
+  uva.expr <- get_expression(uva.expr, GPL96)
+
+}
 
 ### extract clinical data -- limit to 
 GSE37317.p <- pData(UVA[[1]])
 
 keep <- GSE37317.p$characteristics_ch1.2 == "histology: urothelial carcinoma"
 uva.expr = uva.expr[,keep]
+
 GSE37317.p = GSE37317.p[keep,]
 
 # get stages #
@@ -42,5 +46,8 @@ uva.stage[GSE37317.p$characteristics_ch1.1 == "muscle invasion: muscle invasive"
 uva_clinical <- create_clinical_table(id = colnames(uva.expr), stage = uva.stage)
 
 # save expression and clinical data
-save(uva.expr, file = file_expr)
+if (PROCESS_EXPRESSION) {
+  save(uva.expr, file = file_expr)
+}
+
 save(uva_clinical, file = file_clinical)

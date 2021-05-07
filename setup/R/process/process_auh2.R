@@ -12,16 +12,18 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # load expression and platform data
 load("../../data/original/GSE5479.impute.RData")
-load("../../data/platforms/GPL4060.RData")
-
 auh2.expr <- GSE5479.expr
 
-# generate boxplot
-generate_boxplot(auh2.expr, 'AUH-2')
+if (PROCESS_EXPRESSION) {
+  load("../../data/platforms/GPL4060.RData")
 
-# get gene-level expression values
-auh2.expr <- get_expression(auh2.expr, GPL4060)
+  # generate boxplot
+  generate_boxplot(auh2.expr, 'AUH-2')
 
+  # get gene-level expression values
+  auh2.expr <- get_expression(auh2.expr, GPL4060)
+}
+  
 ### extract clinical data
 GSE5479.stage <- factor(GSE5479.stage, labels = c('nmi', 'mi'))
 
@@ -33,8 +35,9 @@ auh2_clinical <- create_clinical_table(id = paste0('S', 1:ncol(auh2.expr)),
                              stage = GSE5479.stage)
 
 # set names (matching not done in this pipeline)
-colnames(auh2.expr) <- auh2_clinical$id
+if (PROCESS_EXPRESSION) {
+  colnames(auh2.expr) <- auh2_clinical$id
+  save(auh2.expr, file = file_expr)
+}
 
-# save expression and clinical data
-save(auh2.expr, file = file_expr)
 save(auh2_clinical, file = file_clinical)

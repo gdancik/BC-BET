@@ -16,14 +16,18 @@ GSE48075 = getGEO('GSE48075')
 mda2.expr <- exprs(GSE48075[[1]])
 GSE48075.p <- pData(GSE48075[[1]])
 
-# load platform data
-load("../../data/platforms/GPL6947.RData")
+if (PROCESS_EXPRESSION) {
+  # load platform data
+  load("../../data/platforms/GPL6947.RData")
 
-# generate boxplot
-generate_boxplot(mda2.expr, 'MDA-2')
+  # generate boxplot
+  generate_boxplot(mda2.expr, 'MDA-2')
 
-# get gene-level expression values
-mda2.expr <- get_expression(mda2.expr, GPL6947)
+  # get gene-level expression values
+  mda2.expr <- get_expression(mda2.expr, GPL6947)
+  save(mda2.expr, file = file_expr)
+
+}
 
 ## get clinical data
 
@@ -52,13 +56,10 @@ outcome = rep(NA, length(tmp))
 outcome[tmp == "os censor: uncensored"] = 1
 outcome[tmp == "os censor: censored"] = 0
  
-
 # create clinical data table
 mda2_clinical <- create_clinical_table(id = colnames(mda2.expr), 
                             stage = stage,
                             os_time = time,
                             os_outcome = outcome)
 
-# save expression and clinical data
-save(mda2.expr, file = file_expr)
 save(mda2_clinical, file = file_clinical)

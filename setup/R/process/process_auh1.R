@@ -15,45 +15,51 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 # load expression and platform data
 
 auh1 <- getGEO('GSE3167')
-
 auh1.expr <- exprs(auh1[[1]])
-#View(auh1.expr)
 
-load("../../data/platforms/GPL96.RData")
+if (PROCESS_EXPRESSION) {
+
+  load("../../data/platforms/GPL96.RData")
+
+  #################################################
+
+  #TODO - take log2 of auh1 and save in auh1
+
+  # generate boxplot
+  generate_boxplot(auh1.expr, 'auh1', FALSE)
+
+  auh1.expr <- log2(auh1.expr)
+  auh1.expr <- as.matrix(auh1.expr)
+
+  generate_boxplot(auh1.expr, 'auh1', FALSE)
+
+  #View(auh1.expr)
+
+  # get gene-level expression values
+  auh1.expr <- get_expression(auh1.expr, GPL96)
+  #View(auh1.expr)
+
+}
 
 #################################################
-
-#TODO - take log2 of auh1 and save in auh1
-
-# generate boxplot
-generate_boxplot(auh1.expr, 'auh1', FALSE)
-
-auh1.expr <- log2(auh1.expr)
-auh1.expr <- as.matrix(auh1.expr)
-
-generate_boxplot(auh1.expr, 'auh1', FALSE)
-
-#View(auh1.expr)
-
-#################################################
-
-# get gene-level expression values
-auh1.expr <- get_expression(auh1.expr, GPL96)
-#View(auh1.expr)
 
 ### extract clinical data -- limit to 
 GSE3167.p <- pData(auh1[[1]])
 
 #View(GSE3167.p)
 
-#after the log2 expression, continue on line 46
 
 ######################################################
 
 keep <- (GSE3167.p$source_name_ch1 == "Normal bladder biopsy" | GSE3167.p$source_name_ch1 == "Bladder tumor tissue" | GSE3167.p$source_name_ch1=="Bladder timor tissue")
-auh1.expr = auh1.expr[,keep]
-GSE3167.p = GSE3167.p[keep,]
 
+auh1.expr = auh1.expr[,keep]
+
+if (PROCESS_EXPRESSION) {
+  save(auh1.expr, file = file_expr)
+}
+
+GSE3167.p = GSE3167.p[keep,]
 
 #View(GSE3167.p)
 
@@ -95,15 +101,10 @@ auh1.grade[gradeHi == TRUE] <- "hg"
 #View(auh1.stage)
 #View(auh1.grade)
 
-
-
-
 ##################################################################
 
 # create clinical data table
 auh1_clinical <- create_clinical_table(id = colnames(auh1.expr), tumor = auh1.tumor, grade = auh1.grade, stage = auh1.stage)
 #View(auh1_clinical)
 
-# save expression and clinical data
-save(auh1.expr, file = file_expr)
 save(auh1_clinical, file = file_clinical)
