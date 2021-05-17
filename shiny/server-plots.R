@@ -5,13 +5,8 @@ library(survival)
 library(GGally)
 
 source('graphPanelFunctions.R')
+source('mongo.R')
 
-mongo_connect <- function(collection, user = "root", pass = "password",
-                          host = "0.0.0.0:2000") {
-  # Using plain-text
-  URI = sprintf("mongodb://%s:%s@%s/", user, pass, host)
-  mongo(url = URI, collection = collection, db = 'bcbet')
-}
 
 # returns a data frame combining expression with 
 # clinical data specified by 'clin_column', e.g., 'stage'.

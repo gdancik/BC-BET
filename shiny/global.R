@@ -1,17 +1,19 @@
 # global variables and functions
 GLOBAL <- list(gene = NULL, submitType = 'qry', 
                DEBUG = TRUE,
-               TEST = FALSE,
-               url_params = 'page')
+               TEST = TRUE,
+               url_params = 'page',
+               geneResults = NULL)
 
 resetGLOBAL <- function() {
   setGLOBAL('gene', NULL)
   setGLOBAL('submitType', 'qry')
   setGLOBAL('url_params', 'page')
+  setGLOBAL('geneResults', NULL)
 }
 
 setGLOBAL <- function(name, x) {
-  if (!name %in% c('gene','submitType', 'url_params')) {
+  if (!name %in% c('gene','submitType', 'url_params', 'geneResults')) {
     stop('invalid name argument: ', name)
   }
   GLOBAL[[name]] <<- x
@@ -28,7 +30,6 @@ removeGLOBALurlExcept <- function(...) {
   GLOBAL$url_params <<- intersect(GLOBAL$url_params, params)
 }
   
-
 if (!GLOBAL$DEBUG) {
 # comment out for debugging
   cat <- function(...){invisible()}

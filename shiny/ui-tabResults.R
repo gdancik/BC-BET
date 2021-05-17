@@ -4,19 +4,18 @@
 
 # Summary tab
 tabSummary <- tabPanel('Summary',
-                       
+             br(),          
     fluidRow(column(6,
               plotOutput('plotSummary')
             ),column(6,
                      
               tabsetPanel(id = 'tabSummaryTable',
                           type = 'pills',
-                          tabPanel('All'),
                           tabPanel('Tumor'),
                           tabPanel('Grade'),
                           tabPanel('Stage')
               ),
-              tableOutput('tableSummary')
+              dataTableOutput('tableSummary')
             )
     )
 )
