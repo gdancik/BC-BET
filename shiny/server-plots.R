@@ -101,6 +101,8 @@ bcbet_km <- function(df, ds) {
 # in output$graphOutputId (e.g., output$tumor)
 generatePlots <- function(plotType, graphOutputId) {
  
+  catn('in generatePlots...')
+  
   if (plotType == 'survival') {
     showNotification('need to handle plotType survival in generatePlots; we need to get survival results from mongo')
     return(NULL)
@@ -130,7 +132,7 @@ generatePlots <- function(plotType, graphOutputId) {
   # datasets <- sort(datasets)
   
   
-  results <- GLOBAL$geneResults[[plotType]]
+  results <- REACTIVE_SEARCH$results[[plotType]]
   
   if (nrow(results) == 0) {
     return(NULL)
@@ -235,6 +237,9 @@ observeEvent(list(input$resultsPage, input$plotsPage), {
   if (input$resultsPage != "Plots") {
     return()
   }
+  
+  
+  catn('generating plots for: ', input$plotsPage)
   
   if (input$plotsPage == 'Tumor') {
     tumorPlots()

@@ -53,10 +53,9 @@ format_column_names <- function(x) {
 }
 
 # generate results for single 'gene'
-getSingleGeneResults <- function(gene) {
-  shinyjs::runjs("$('#please-wait').removeClass('hide');")
-  
-  #myinput <- reactiveValuesToList(input)
+getSingleGeneResults <- reactive({
+    
+  gene <- REACTIVE_SEARCH$gene
   
   catn('PROCESSING GENE: ', gene)
   
@@ -71,49 +70,10 @@ getSingleGeneResults <- function(gene) {
   
   res <- lapply(res, summarize_de, count = FALSE)
   
-  setGLOBAL('geneResults', res)
-  
-  output$ResultsHeader <- renderUI({
-    h4('Patient Analysis for', gene, style = 'margin:0px; color:darkred;')
-  })
+  REACTIVE_SEARCH$results <- res
   
   
-  output$plotSummary <- renderPlot({
-    
-    labels <- labels <- c('FC > 1, P < 0.05', 'FC > 1, P >= 0.05', 'FC < 1, P >= 0.05', 'FC < 1, P > 0.05')
-    
-    df <- sapply(res, function(x) table(x$category)) %>% data.frame()
-    df$category <- rownames(df)
-    
-    # melt the data to create data frame of counts
-    # arrange (order) by category (plotted with
-    # 'a' on the top and 'd' on the bottom), and
-    # add the label_position and number of datasets
-    # for each variable
-    m <- melt(df, id.vars = 'category') %>%
-      arrange(rev(category)) %>%
-      group_by(variable) %>%
-      #mutate(label_y = cumsum(value), n = sum(value))
-      mutate(label_y = label_position(value), n = sum(value))
-    
-    ggplot(m, aes(x = variable, y = value, fill = category)) +
-      geom_col(position = 'fill', color = 'black') +
-      geom_label(aes(y = label_y / n, label = value), vjust = .5,
-                 colour = "black", fill = 'white') +
-      scale_fill_manual(values = c('darkred', 'pink', 'lightblue', 'darkblue'),
-                        labels = labels) +
-      theme_linedraw() + labs(x = '', y = 'proportion') + 
-      theme(legend.title = element_blank()) +
-      ggtitle('Summary of differential expression results')
-    
-  })
-  
-  output$tableSummary <- render_de_table(GLOBAL$geneResults$tumor,
-                                         GLOBAL$gene, 'tumor')
-  
-  shinyjs::runjs("$('#please-wait').addClass('hide');")
-}
-
+})
 
 render_de_table <- function(x, gene, var_type) {
   if (is.null(x)) {
@@ -160,10 +120,50 @@ render_de_table <- function(x, gene, var_type) {
   })
 }
 
-observeEvent(input$tabSummaryTable, {
+observe({
+  l <- list(input$tabSummaryTable, REACTIVE_SEARCH$results, REACTIVE_SEARCH$gene)  
+  if (any(sapply(l, is.null))) {
+    return(NULL)
+  }
   cat('clicked on: ', input$tabSummaryTable, '...\n')
+  catn('gene = ', REACTIVE_SEARCH$gene)
   selected <- tolower(input$tabSummaryTable)
-  output$tableSummary <- render_de_table(GLOBAL$geneResults[[selected]],
-                                         GLOBAL$gene, selected)
+  output$tableSummary <- render_de_table(REACTIVE_SEARCH$results[[selected]],
+                                         REACTIVE_SEARCH$gene, selected)
 })
+
+output$plotSummary <- renderPlot({
+  
+  if (is.null(REACTIVE_SEARCH$results)) {
+    return(NULL)
+  }
+  
+  labels <- labels <- c('FC > 1, P < 0.05', 'FC > 1, P >= 0.05', 'FC < 1, P >= 0.05', 'FC < 1, P > 0.05')
+  
+  df <- sapply(REACTIVE_SEARCH$results, function(x) table(x$category)) %>% data.frame()
+  df$category <- rownames(df)
+  
+  # melt the data to create data frame of counts
+  # arrange (order) by category (plotted with
+  # 'a' on the top and 'd' on the bottom), and
+  # add the label_position and number of datasets
+  # for each variable
+  m <- melt(df, id.vars = 'category') %>%
+    arrange(rev(category)) %>%
+    group_by(variable) %>%
+    #mutate(label_y = cumsum(value), n = sum(value))
+    mutate(label_y = label_position(value), n = sum(value))
+  
+  ggplot(m, aes(x = variable, y = value, fill = category)) +
+    geom_col(position = 'fill', color = 'black') +
+    geom_label(aes(y = label_y / n, label = value), vjust = .5,
+               colour = "black", fill = 'white') +
+    scale_fill_manual(values = c('darkred', 'pink', 'lightblue', 'darkblue'),
+                      labels = labels) +
+    theme_linedraw() + labs(x = '', y = 'proportion') + 
+    theme(legend.title = element_blank()) +
+    ggtitle('Summary of differential expression results')
+  
+})
+
 

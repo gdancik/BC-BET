@@ -2,11 +2,13 @@
 # tabResults UI -- results page for single gene analysis
 ############################################################
 
+library(shinycssloaders)
+
 # Summary tab
 tabSummary <- tabPanel('Summary',
              br(),          
     fluidRow(column(6,
-              plotOutput('plotSummary')
+              withSpinner(plotOutput('plotSummary'))
             ),column(6,
                      
               tabsetPanel(id = 'tabSummaryTable',
@@ -15,7 +17,7 @@ tabSummary <- tabPanel('Summary',
                           tabPanel('Grade'),
                           tabPanel('Stage')
               ),
-              dataTableOutput('tableSummary')
+              withSpinner(dataTableOutput('tableSummary'))
             )
     )
 )

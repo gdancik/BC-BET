@@ -14,6 +14,8 @@ shinyServer(function(input, output, session) {
   source("server-plots.R", local = TRUE)
   source("server-download.R", local = TRUE)
   
+  REACTIVE_SEARCH <- reactiveValues(gene = NULL, results = NULL)
+  
   shinyjs::disable('btnGeneSearch')
   shinyjs::runjs("$('#please-wait').addClass('hide');")
   
