@@ -108,16 +108,20 @@ getSingleGeneResults <- function(gene) {
     
   })
   
-  output$tableSummary <- render_de_table(GLOBAL$geneResults$tumor)
+  output$tableSummary <- render_de_table(GLOBAL$geneResults$tumor,
+                                         GLOBAL$gene, 'tumor')
   
   shinyjs::runjs("$('#please-wait').addClass('hide');")
 }
 
 
-render_de_table <- function(x) {
+render_de_table <- function(x, gene, var_type) {
   if (is.null(x)) {
     return(renderTable(NULL))
   }
+  
+  filename <- paste0('bcbet_', gene, '_', var_type)
+  btnText <- paste('Download', var_type, 'table')
   
   colnames <- c('Dataset' = 'dataset', 'Gene' = 'gene', 'FC' = 'fc', 
                 'P-value' = 'pt')
@@ -125,11 +129,25 @@ render_de_table <- function(x) {
   renderDataTable({
     
     DT::datatable(x, colnames = colnames, rownames = FALSE,filter = 'none', selection = 'none',
+                  extensions = 'Buttons',
                   options = list(paging = FALSE, searching = FALSE,
                                  columnDefs = list(list(visible=FALSE, targets=4),
-                                                   list(className = 'dt-center', targets = '_all'))
-                                 )
-                  ) %>% 
+                                                   list(className = 'dt-center', targets = '_all')),
+                              dom = 'Bfrtip',
+                                buttons = list(
+                                  list(
+                                    extend = 'csv', text = btnText, filename = filename
+                                  ),
+                                  list(
+                                    extend = "collection",
+                                    text = 'Download all results',
+                                      action = DT::JS("function ( e, dt, node, config ) {
+                                          alert( 'Button activated' );
+                                      }")
+                      ))
+                  
+                  
+                  )) %>% 
       DT::formatStyle('category',target = 'row',
       backgroundColor = styleEqual(c('a','b','c','d'), 
                                    c('darkred', 'pink', 'lightblue', 'darkblue')
@@ -144,22 +162,8 @@ render_de_table <- function(x) {
 
 observeEvent(input$tabSummaryTable, {
   cat('clicked on: ', input$tabSummaryTable, '...\n')
-  output$tableSummary <- render_de_table(GLOBAL$geneResults[[tolower(input$tabSummaryTable)]])
+  selected <- tolower(input$tabSummaryTable)
+  output$tableSummary <- render_de_table(GLOBAL$geneResults[[selected]],
+                                         GLOBAL$gene, selected)
 })
 
-
-
-
-
-# 
-# DT::datatable(x, rownames = FALSE,filter = 'none', selection = 'none',
-#               options = list(paging = FALSE, searching = FALSE,
-#                              columnDefs = list(list(visible=FALSE, targets=4))
-#               )) %>%  
-#   DT::formatStyle('Category', target = 'row',
-#   backgroundColor = styleEqual(c('a','b','c','d'), 
-#                                c('darkred', 'pink', 'lightblue', 'darkblue')
-#   ), fontWeight = 'bold',
-#   color = styleEqual(c('a','b','c','d'),
-#                      c('white', 'black', 'black', 'white')
-#   )) %>% formatRound(c('FC', 'P-value'),3)
