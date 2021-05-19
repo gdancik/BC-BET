@@ -76,10 +76,9 @@ bcbet_boxplot <- function(df,ds, measure, p, reverse = FALSE, upper = TRUE) {
   
 }
 
-
 bcbet_km <- function(df, ds, hr, p) {
   
-  p <- round(p)
+  p <- round(p,3)
   if (p < 0.01) {
     p <- 'P < 0.01'
   } else {
@@ -144,7 +143,7 @@ generatePlots <- function(plotType, graphOutputId) {
   # datasets <- sort(datasets)
   
   if (plotType == 'survival') {
-    results <- REACTIVE_SEARCH$results_survival[['ba']]
+    results <- REACTIVE_SEARCH$results_survival[['survival']]
   } else {
     results <- REACTIVE_SEARCH$results_de[[plotType]]
   }

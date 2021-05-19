@@ -72,11 +72,18 @@ getSingleGeneResults <- reactive({
   res1 <- lapply(res1, summarize_de, count = FALSE)
   
   # get survival results
-  types <- c('ba')
+  types <- c('survival')
+  
+  # specify endpoint -- for 'ba', do not change query
+  # qry <- paste0('{"gene":"', gene, '", "endpoint":"dss"}')
+  
   res2 <- sapply(types, function(x, qry) {
     m <- mongo_connect(x)
-    m$find(qry, fields = '{"_id":0, "gene":1, "dataset":1, "hr_med":1, "p_med":1}')
+    m$find(qry, fields = '{"_id":0, "gene":1, "dataset":1, "endpoint":1, "hr_med":1, "p_med":1}')
   }, qry = qry, USE.NAMES = TRUE, simplify = FALSE)
+  
+  # if 'ba', then take first endpoint for each dataset (dss, os, rfs)
+  res2 <- lapply(res2, function(x)  {x  %>% arrange(endpoint) %>% group_by(dataset) %>% slice_head()}      )
   
   res2 <- lapply(res2, summarize_de, fc_col = 'hr_med', p_col = 'p_med', count = FALSE)
   
@@ -96,7 +103,8 @@ render_de_table <- function(x, gene, var_type) {
   btnText <- paste('Download', var_type, 'table')
   
   colnames <- c('Dataset' = 'dataset', 'Gene' = 'gene', 'FC' = 'fc', 
-                'P-value' = 'pt', 'P-value' = 'p_med', 'HR' = 'hr_med')
+                'P-value' = 'pt', 'P-value' = 'p_med', 'HR' = 'hr_med',
+                'Endpoint' = 'endpoint')
   
   colnames <- colnames[colnames%in% colnames(x)]
   
@@ -105,12 +113,17 @@ render_de_table <- function(x, gene, var_type) {
     roundCols <- c('HR', 'P-value')
   }
   
+  hideCol <- 4
+  if ('HR' %in% roundCols) {
+    hideCol <- 5
+  }
+  
   renderDataTable({
     
     DT::datatable(x, colnames = colnames, rownames = FALSE,filter = 'none', selection = 'none',
                   extensions = 'Buttons',
                   options = list(paging = FALSE, searching = FALSE,
-                                 columnDefs = list(list(visible=FALSE, targets=4),
+                                 columnDefs = list(list(visible=FALSE, targets=hideCol),
                                                    list(className = 'dt-center', targets = '_all')),
                               dom = 'Bfrtip',
                                 buttons = list(
@@ -148,7 +161,7 @@ observe({
   selected <- tolower(input$tabSummaryTable)
   
   if (selected %in% c('survival')) {
-    output$tableSummary <- render_de_table(REACTIVE_SEARCH$results_survival[['ba']],
+    output$tableSummary <- render_de_table(REACTIVE_SEARCH$results_survival[[selected]],
                                            REACTIVE_SEARCH$gene, selected)
   } else {
     output$tableSummary <- render_de_table(REACTIVE_SEARCH$results_de[[selected]],
