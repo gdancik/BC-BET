@@ -15,7 +15,8 @@ tabSummary <- tabPanel('Summary',
                           type = 'pills',
                           tabPanel('Tumor'),
                           tabPanel('Grade'),
-                          tabPanel('Stage')
+                          tabPanel('Stage'),
+                          tabPanel('Survival')
               ),
               withSpinner(dataTableOutput('tableSummary'))
             )

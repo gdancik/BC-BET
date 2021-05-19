@@ -3,6 +3,7 @@ library(ggplot2)
 library(tidyr)
 library(survival)
 library(GGally)
+library(cowplot)
 
 source('graphPanelFunctions.R')
 source('mongo.R')
@@ -76,7 +77,18 @@ bcbet_boxplot <- function(df,ds, measure, p, reverse = FALSE, upper = TRUE) {
 }
 
 
-bcbet_km <- function(df, ds) {
+bcbet_km <- function(df, ds, hr, p) {
+  
+  p <- round(p)
+  if (p < 0.01) {
+    p <- 'P < 0.01'
+  } else {
+    p <- paste0('P = ', p)
+  }
+  
+  hr <- paste0('HR = ', round(hr, 2))
+  title <- paste0(ds, '\n', hr, ' (', p, ')')
+  
   
   cut = median(df$x)
   upper = "upper 50%"; lower = "lower 50%"
@@ -93,7 +105,7 @@ bcbet_km <- function(df, ds) {
                     surv.col = col, cens.col = col,
                     size.est = 1) +
     ggplot2::coord_cartesian(ylim = c(0, 1)) + theme_classic() +
-    labs(x = 'Time (months)', ylab = 'Survival probability')
+    labs(x = 'Time (months)', ylab = 'Survival probability') + ggtitle(title)
     
 }
 
@@ -103,10 +115,10 @@ generatePlots <- function(plotType, graphOutputId) {
  
   catn('in generatePlots...')
   
-  if (plotType == 'survival') {
-    showNotification('need to handle plotType survival in generatePlots; we need to get survival results from mongo')
-    return(NULL)
-  }
+  # if (plotType == 'survival') {
+  #   showNotification('need to handle plotType survival in generatePlots; we need to get survival results from mongo')
+  #   return(NULL)
+  # }
   
   shinyjs::runjs("$('#please-wait').removeClass('hide');")
   
@@ -131,8 +143,11 @@ generatePlots <- function(plotType, graphOutputId) {
   # datasets <- gsub('_.*$', '', collections$cursor$firstBatch$name)
   # datasets <- sort(datasets)
   
-  
-  results <- REACTIVE_SEARCH$results[[plotType]]
+  if (plotType == 'survival') {
+    results <- REACTIVE_SEARCH$results_survival[['ba']]
+  } else {
+    results <- REACTIVE_SEARCH$results_de[[plotType]]
+  }
   
   if (nrow(results) == 0) {
     return(NULL)
@@ -152,21 +167,29 @@ generatePlots <- function(plotType, graphOutputId) {
     reverse <- TRUE
   }
 
+  cat('generating plot for:')
+  print(results)
+  
   for (i in 1:nrow(results)) {
     
     columns <- plotType
     if (plotType == 'survival') {
-      columns <- c('dss_time', 'dss_outcome')
+      columns <- c('ba_time', 'ba_outcome')
+      measure <- results$hr_med[i]
+      p <- results$p_med[i]
+    } else {
+      measure <- results$fc[i]
+      p <- results$pt[i]
     }
     
     ds <- results$dataset[i]
-    measure <- results$fc[i]
-    p <- results$pt[i]
     
+
     cat("getting data for: ", ds, "...\n")
     df <- get_mongo_df(ds, qry, columns)
     
     if (is.null(df) || nrow(df) == 0) {
+      catn('skipping ', df, ' ...')
       next
     }
     
@@ -178,7 +201,7 @@ generatePlots <- function(plotType, graphOutputId) {
     
     if (plotType == 'survival') {
       cat('  assigning plot to myplots')
-      myplots[[count]] <- bcbet_km(df)
+      myplots[[count]] <- bcbet_km(df, ds, measure, p)
     } else {
       myplots[[count]] <- bcbet_boxplot(df, ds, measure, p, upper = upper, reverse = reverse)
     }
@@ -188,7 +211,6 @@ generatePlots <- function(plotType, graphOutputId) {
   
   # create appropriate number of plot containers, including legend for
   # survival
-  
   
   if (plotType == 'survival' && count > 0) {
     count <- count + 1

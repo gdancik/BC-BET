@@ -1,6 +1,7 @@
 library(ggplot2)
 library(dplyr)
 library(reshape)
+library(DT)
 
 source('mongo.R')
 
@@ -63,14 +64,25 @@ getSingleGeneResults <- reactive({
   
   # get DE results
   types <- c('tumor', 'grade', 'stage')
-  res <- sapply(types, function(x, qry) {
+  res1 <- sapply(types, function(x, qry) {
     m <- mongo_connect(x)
     m$find(qry, fields = '{"_id":0, "gene":1, "dataset":1, "fc":1, "pt":1}')
   }, qry = qry, USE.NAMES = TRUE, simplify = FALSE)
   
-  res <- lapply(res, summarize_de, count = FALSE)
+  res1 <- lapply(res1, summarize_de, count = FALSE)
   
-  REACTIVE_SEARCH$results <- res
+  # get survival results
+  types <- c('ba')
+  res2 <- sapply(types, function(x, qry) {
+    m <- mongo_connect(x)
+    m$find(qry, fields = '{"_id":0, "gene":1, "dataset":1, "hr_med":1, "p_med":1}')
+  }, qry = qry, USE.NAMES = TRUE, simplify = FALSE)
+  
+  res2 <- lapply(res2, summarize_de, fc_col = 'hr_med', p_col = 'p_med', count = FALSE)
+  
+  REACTIVE_SEARCH$results_de <- res1
+  REACTIVE_SEARCH$results_survival <- res2
+  
   
   
 })
@@ -84,7 +96,14 @@ render_de_table <- function(x, gene, var_type) {
   btnText <- paste('Download', var_type, 'table')
   
   colnames <- c('Dataset' = 'dataset', 'Gene' = 'gene', 'FC' = 'fc', 
-                'P-value' = 'pt')
+                'P-value' = 'pt', 'P-value' = 'p_med', 'HR' = 'hr_med')
+  
+  colnames <- colnames[colnames%in% colnames(x)]
+  
+  roundCols <- c('FC', 'P-value')
+  if ('HR' %in% names(colnames)) {
+    roundCols <- c('HR', 'P-value')
+  }
   
   renderDataTable({
     
@@ -107,40 +126,45 @@ render_de_table <- function(x, gene, var_type) {
                       ))
                   
                   
-                  )) %>% 
-      DT::formatStyle('category',target = 'row',
+                  )) %>% formatStyle('category',target = 'row',
       backgroundColor = styleEqual(c('a','b','c','d'), 
                                    c('darkred', 'pink', 'lightblue', 'darkblue')
        ), #fontWeight = 'bold',
       color = styleEqual(c('a','b','c','d'),
                          c('white', 'black', 'black', 'white')
       )
-    ) %>% formatRound(c('FC', 'P-value'),c(2,3))
+    ) %>% formatRound(roundCols, c(2,3))
     
   })
 }
 
 observe({
-  l <- list(input$tabSummaryTable, REACTIVE_SEARCH$results, REACTIVE_SEARCH$gene)  
+  l <- list(input$tabSummaryTable, REACTIVE_SEARCH$results_de, REACTIVE_SEARCH$gene)  
   if (any(sapply(l, is.null))) {
     return(NULL)
   }
   cat('clicked on: ', input$tabSummaryTable, '...\n')
   catn('gene = ', REACTIVE_SEARCH$gene)
   selected <- tolower(input$tabSummaryTable)
-  output$tableSummary <- render_de_table(REACTIVE_SEARCH$results[[selected]],
+  
+  if (selected %in% c('survival')) {
+    output$tableSummary <- render_de_table(REACTIVE_SEARCH$results_survival[['ba']],
+                                           REACTIVE_SEARCH$gene, selected)
+  } else {
+    output$tableSummary <- render_de_table(REACTIVE_SEARCH$results_de[[selected]],
                                          REACTIVE_SEARCH$gene, selected)
+  }
 })
 
 output$plotSummary <- renderPlot({
   
-  if (is.null(REACTIVE_SEARCH$results)) {
+  if (is.null(REACTIVE_SEARCH$results_de)) {
     return(NULL)
   }
   
   labels <- labels <- c('FC > 1, P < 0.05', 'FC > 1, P >= 0.05', 'FC < 1, P >= 0.05', 'FC < 1, P > 0.05')
   
-  df <- sapply(REACTIVE_SEARCH$results, function(x) table(x$category)) %>% data.frame()
+  df <- sapply(REACTIVE_SEARCH$results_de, function(x) table(x$category)) %>% data.frame()
   df$category <- rownames(df)
   
   # melt the data to create data frame of counts
