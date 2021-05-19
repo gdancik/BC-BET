@@ -40,13 +40,38 @@ observeEvent(input$btnGeneSearch,{
 
 
 resetResultsPage <- function() {
-  setBookmarkInclude('geneInput')
+  
+  #resetGLOBAL()
+  #catn('inputs are: ', names(reactiveValuesToList(input)))
+  
   catn("removing tab...")
-  removeTab('page', 'Results')
+  #removeTab('page', 'Results')
   catn('inserting tab...')
-  insertTab('page', tabResults, "Home", position = "after", select = TRUE)
- 
+  
+  shinyjs::runjs("$('#please-wait').removeClass('hide');")
+  
+
+  if (is.null(REACTIVE_SEARCH$gene)) {
+    insertTab('page', tabResults, "Home", position = "after")
+  }
+  
+  REACTIVE_SEARCH$gene = input$geneInput
+  
+  output$ResultsHeader <- renderUI({
+    h4('Patient Analysis for', isolate(input$geneInput), style = 'margin:0px; color:darkred;')
+  })
+  
+  getSingleGeneResults()
+  
+  #showTab('page', 'Results')
+    
+  updateTabsetPanel(inputId = 'page', selected = 'Results')
+
+  shinyjs::runjs("$('#please-wait').addClass('hide');")
+    
 }
+
+
 
 # on multi gene search
 observeEvent(input$btnMultiGeneSearch,{

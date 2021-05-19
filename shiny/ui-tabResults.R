@@ -2,21 +2,23 @@
 # tabResults UI -- results page for single gene analysis
 ############################################################
 
+library(shinycssloaders)
+
 # Summary tab
 tabSummary <- tabPanel('Summary',
-                       
+             br(),          
     fluidRow(column(6,
-              plotOutput('plotSummary')
+              withSpinner(plotOutput('plotSummary'))
             ),column(6,
                      
               tabsetPanel(id = 'tabSummaryTable',
                           type = 'pills',
-                          tabPanel('All'),
                           tabPanel('Tumor'),
                           tabPanel('Grade'),
-                          tabPanel('Stage')
+                          tabPanel('Stage'),
+                          tabPanel('Survival')
               ),
-              tableOutput('tableSummary')
+              withSpinner(dataTableOutput('tableSummary'))
             )
     )
 )
@@ -29,7 +31,9 @@ tabPlots <- tabPanel('Plots',
             tabPanel('Grade', h4('Comparison of high grade (HG) and low grade (LG) tumor samples', class = 'plotHeader'),
                                 uiOutput('graphOutputGrade')),
             tabPanel('Stage', h4('Comparison of muscle invasive (MI) and non-muscle invasive (NMI) tumor samples', class = 'plotHeader'),
-                                uiOutput('graphOutputStage'))
+                                uiOutput('graphOutputStage')),
+            tabPanel('Survival', h4('Kaplan Meier curves comparing high and low expressors', class = 'plotHeader'),
+                                uiOutput('graphOutputSurvival'))
         )
 )                        
 
@@ -43,7 +47,7 @@ tabDownload <- tabPanel('Download',
 tabResults <- tabPanel("Results",
       uiOutput('ResultsHeader'), hr(style = 'margin-top:10px; margin-bottom:10px'),
       fluidRow(column(style='border-right: 1px solid',width = 12,
-          tabsetPanel(id = "ResultsPage",
+          tabsetPanel(id = "resultsPage",
               tabSummary,
               tabPlots, 
               tabDownload

@@ -1,18 +1,16 @@
 library(mongolite)
 library(ggplot2)
 library(tidyr)
+library(survival)
+library(GGally)
+library(cowplot)
 
 source('graphPanelFunctions.R')
+source('mongo.R')
 
-mongo_connect <- function(collection, user = "root", pass = "password",
-                          host = "0.0.0.0:2000") {
-  # Using plain-text
-  URI = sprintf("mongodb://%s:%s@%s/", user, pass, host)
-  mongo(url = URI, collection = collection, db = 'bcbet')
-}
 
 # returns a data frame combining expression with 
-# clinical data specified by 'plotType', e.g., 'stage'.
+# clinical data specified by 'clin_column', e.g., 'stage'.
 get_mongo_df <- function(ds, gene_qry, clin_column = NULL) {
   m <- mongo_connect(paste0(ds, '_expr'))
   x <- m$find(gene_qry)
@@ -25,17 +23,39 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL) {
     return(df)
   }
   
-  if (length(x$expr[[1]]) == 0 || is.null(y[[clin_column]])) {
+  if (length(x$expr[[1]]) == 0 || any(!clin_column%in%colnames(y))) {
     return(NULL)
   }
   
-  data.frame(x = x$expr[[1]], y = y[[clin_column]]) %>% drop_na()
+  if (length(clin_column) == 1) {
+    df <- data.frame(x = x$expr[[1]], y = y[,clin_column])
+  } else {
+    df <- data.frame(x = x$expr[[1]],
+                     y1 = y[,clin_column[1]],
+                     y2 = y[,clin_column[2]])
+  }
+
+  df %>% drop_na()
+    
 }
 
-bcbet_boxplot <- function(df,ds, reverse = FALSE, upper = TRUE) {
-  g1 <- ggplot(df, aes(y,x,fill=y)) + geom_boxplot() + theme_linedraw() +
+bcbet_boxplot <- function(df,ds, measure, p, reverse = FALSE, upper = TRUE) {
+
+  p <- round(p)
+  if (p < 0.01) {
+    p <- 'P < 0.01'
+  } else {
+    p <- paste0('P = ', p)
+  }
+  
+  measure <- paste0('FC = ', round(measure, 2))
+  
+  
+  title <- paste0(ds, '\n', measure, ' (', p, ')')
+  
+    g1 <- ggplot(df, aes(y,x,fill=y)) + geom_boxplot() + theme_linedraw() +
     labs(x = '', y = 'log2 expression') + guides(fill = 'none') + 
-    ggtitle(ds) + theme(text = element_text(size = 14))
+    ggtitle(title) + theme(text = element_text(size = 14))
   
   if (upper || reverse) {
     levels <- labels <- limits <- levels(factor(df$y))
@@ -56,9 +76,49 @@ bcbet_boxplot <- function(df,ds, reverse = FALSE, upper = TRUE) {
   
 }
 
+bcbet_km <- function(df, ds, hr, p) {
+  
+  p <- round(p,3)
+  if (p < 0.01) {
+    p <- 'P < 0.01'
+  } else {
+    p <- paste0('P = ', p)
+  }
+  
+  hr <- paste0('HR = ', round(hr, 2))
+  title <- paste0(ds, '\n', hr, ' (', p, ')')
+  
+  
+  cut = median(df$x)
+  upper = "upper 50%"; lower = "lower 50%"
+  
+  ## split into high and low groups using appropriate cutoff ## 
+  df$expression <- factor(df$x >= median(df$x), labels = c(lower,upper))
+  
+  ## plot graph ### ggplot2/GGally form
+  km.group1 = survfit(Surv(y1, y2) ~ expression, data = df)
+  col <- c('darkblue', 'darkred')
+  
+  ggsurv(km.group1, 
+                    main = ds, 
+                    surv.col = col, cens.col = col,
+                    size.est = 1) +
+    ggplot2::coord_cartesian(ylim = c(0, 1)) + theme_classic() +
+    labs(x = 'Time (months)', ylab = 'Survival probability') + ggtitle(title)
+    
+}
+
 # generate plots of plotType (e.g., 'stage') for rendering
 # in output$graphOutputId (e.g., output$tumor)
 generatePlots <- function(plotType, graphOutputId) {
+ 
+  catn('in generatePlots...')
+  
+  # if (plotType == 'survival') {
+  #   showNotification('need to handle plotType survival in generatePlots; we need to get survival results from mongo')
+  #   return(NULL)
+  # }
+  
   shinyjs::runjs("$('#please-wait').removeClass('hide');")
   
   plot_prefix <- paste0('plot_', plotType)
@@ -66,28 +126,39 @@ generatePlots <- function(plotType, graphOutputId) {
   # may need to alter this for multi-gene input. 
   gene <- input$geneInput
   
-  # get datasets (we may want to get this from mysql results)
-  m <- mongo_connect('mskcc_clinical')
-  command <- paste0('{"listCollections":1, ',
-                    '"filter": {"name": {"$regex": "expr", "$options":""}},',
-                    '"nameOnly": "true" }')
+  # # get datasets (we may want to get this from mysql results)
+  # m <- mongo_connect('mskcc_clinical')
+  # command <- paste0('{"listCollections":1, ',
+  #                   '"filter": {"name": {"$regex": "expr", "$options":""}},',
+  #                   '"nameOnly": "true" }')
+  # 
+  # collections <- m$run(command)
+  # 
+  # if (collections$ok != 1) {
+  #   message('Could not get collections')
+  #   return()
+  # }
+  # 
+  # datasets <- gsub('_.*$', '', collections$cursor$firstBatch$name)
+  # datasets <- sort(datasets)
   
-  collections <- m$run(command)
-  
-  if (collections$ok != 1) {
-    message('Could not get collections')
-    return()
+  if (plotType == 'survival') {
+    results <- REACTIVE_SEARCH$results_survival[['survival']]
+  } else {
+    results <- REACTIVE_SEARCH$results_de[[plotType]]
   }
   
-  datasets <- gsub('_.*$', '', collections$cursor$firstBatch$name)
-  datasets <- sort(datasets)
+  if (nrow(results) == 0) {
+    return(NULL)
+  }
   
+ 
   # Generate graph for each dataset
   
   qry <- paste0('{"gene": "', gene, '"}')
   
   count <- 1
-  myplots <- vector(mode = 'list', 4)
+  myplots <- vector(mode = 'list', length = 1)
   
   upper <- reverse <- FALSE
   if (plotType %in% c("stage", "grade")) {
@@ -95,11 +166,29 @@ generatePlots <- function(plotType, graphOutputId) {
     reverse <- TRUE
   }
 
-  for (ds in datasets) {
+  cat('generating plot for:')
+  print(results)
+  
+  for (i in 1:nrow(results)) {
     
-    df <- get_mongo_df(ds, qry, plotType)
+    columns <- plotType
+    if (plotType == 'survival') {
+      columns <- c('ba_time', 'ba_outcome')
+      measure <- results$hr_med[i]
+      p <- results$p_med[i]
+    } else {
+      measure <- results$fc[i]
+      p <- results$pt[i]
+    }
+    
+    ds <- results$dataset[i]
+    
+
+    cat("getting data for: ", ds, "...\n")
+    df <- get_mongo_df(ds, qry, columns)
     
     if (is.null(df) || nrow(df) == 0) {
+      catn('skipping ', df, ' ...')
       next
     }
     
@@ -107,12 +196,31 @@ generatePlots <- function(plotType, graphOutputId) {
     # upper,'/',reverse,'\n')
     # 
   
-    myplots[[count]] <- bcbet_boxplot(df, ds, upper = upper, reverse = reverse)
+    cat('  plotType ', plotType, ' for ', ds, '...\n')
+    
+    if (plotType == 'survival') {
+      cat('  assigning plot to myplots')
+      myplots[[count]] <- bcbet_km(df, ds, measure, p)
+    } else {
+      myplots[[count]] <- bcbet_boxplot(df, ds, measure, p, upper = upper, reverse = reverse)
+    }
     
     count <- count + 1
   }
   
-  # create appropriate number of plot containers
+  # create appropriate number of plot containers, including legend for
+  # survival
+  
+  if (plotType == 'survival' && count > 0) {
+    count <- count + 1
+
+    myplot1 <- myplots[[1]] 
+    mylegend <- cowplot::get_legend(myplot1)
+
+    myplots <- lapply(myplots, function(x) x + theme(legend.position = 'none'))
+    myplots[[count-1]] <- plot_grid(mylegend)
+  }
+  
   output[[graphOutputId]] <- renderUI({
     createPlotGrid(count-1, plot_prefix)
   })
@@ -141,13 +249,18 @@ stagePlots <- reactive({
   generatePlots('stage', 'graphOutputStage')
 })
 
+survivalPlots <- reactive({
+  generatePlots('survival', 'graphOutputSurvival')
+})
 
-
-observeEvent(list(input$ResultsPage, input$plotsPage), {
+observeEvent(list(input$resultsPage, input$plotsPage), {
   
-  if (input$ResultsPage != "Plots") {
+  if (input$resultsPage != "Plots") {
     return()
   }
+  
+  
+  catn('generating plots for: ', input$plotsPage)
   
   if (input$plotsPage == 'Tumor') {
     tumorPlots()
@@ -158,6 +271,8 @@ observeEvent(list(input$ResultsPage, input$plotsPage), {
   } else if (input$plotsPage == 'Stage') {
     stagePlots()
     return()
+  } else if (input$plotsPage == 'Survival') {
+    survivalPlots()
   }
   
 }, ignoreInit = TRUE)
