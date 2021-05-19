@@ -258,15 +258,15 @@ for (ds in datasets) {
       m$insert(data.frame(res.df))
       m$disconnect(gc = FALSE)
       
-      if (!ba_added) {
-        res.df <- data.frame(gene, dataset = ds, endpoint = 'ba', res)
-        rownames(res.df) <- NULL
-        cat('  adding ba results to mongo ...\n')
-        m <- mongo_connect(survival_table)
-        m$insert(data.frame(res.df))
-        m$disconnect(gc = FALSE)
-        ba_added <- TRUE
-      }
+      # if (!ba_added) {
+      #   res.df <- data.frame(gene, dataset = ds, endpoint = 'ba', res)
+      #   rownames(res.df) <- NULL
+      #   cat('  adding ba results to mongo ...\n')
+      #   m <- mongo_connect(survival_table)
+      #   m$insert(data.frame(res.df))
+      #   m$disconnect(gc = FALSE)
+      #   ba_added <- TRUE
+      # }
       
     }
     
