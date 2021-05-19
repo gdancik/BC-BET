@@ -148,27 +148,32 @@ if (args$surv == "yes") {
 # replace data from dataset 'ds' in table 'v' if replace is 'yes';
 #   otherwise return 'skip' if data already exists
 #   otherwise return 'add'
-replace_or_skip <- function(con, replace, ds, v) {
+#   we optionally include "endpoint":endpoint in the query
+replace_or_skip <- function(con, replace, ds, v, endpoint = NULL) {
+  
+  qry <- paste0('{"dataset":"', ds, '"}')
+  if (!is.null(endpoint)) {
+    qry <- paste0('{"dataset":"', ds, '", "endpoint":"', endpoint, '"}')
+  }
   
   # if we are replacing the data, then we need to delete it
   if (replace == "yes") {
-    cat('  deleting ', ds, ' from mongo table ', v, '...\n')
+    cat('  deleting ', ds, ' from mongo table ', v, ' with endpoint ', endpoint, '...\n')
     m <- mongo_connect(v)
-    qry <- paste0('{"dataset":"', ds, '"}')
     m$remove(qry)
     return('replace')
   } else { # otherwise skip if data exists
     m <- mongo_connect(v)
-    qry <- paste0('{"dataset":"', ds, '"}')
     res <- m$count(qry)
-    
     if (res > 0) {
-      cat('  db already contains ', ds, '(', v, ') -- skipping\n' )
+      cat('  db already contains ', ds, '(', v, endpoint, ') -- skipping\n' )
       return('skip')
     }
   }
   return('add')
 }
+
+
 #############################################################################
 # Loop through all datasets and all variables
 #############################################################################
@@ -214,41 +219,59 @@ for (ds in datasets) {
     next
   }
   
-  ba_added <- FALSE
-  for (v in survival_variables) {
-    
-    if (replace_or_skip(con, args$replace, ds, v) == 'skip') {
-      next
-    }
-    
-    vs <- survival_columns(v)
-    if (is.null(Y[[vs$times]])) {
-      next
-    }
-    
-    cat('  survival analysis for ', ds, ':', v, '\n')
-    res <- coxph_test(X, Y[[vs$times]], Y[[vs$outcomes]])
-    
-    gene <- row.names(res)
-    res.df <- data.frame(gene,dataset=ds,res)
-    rownames(res.df) <- NULL
-    cat('   adding results to mongo ...\n')
-    m <- mongo_connect(v)
-    m$insert(data.frame(res.df))
-    m$disconnect()
-    
-    if (!ba_added) {
-      cat('  adding ba results to mongo ...\n')
-      m <- mongo_connect('ba')
-      m$insert(data.frame(res.df))
-      m$disconnect()
+  for (survival_table in c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
+
+    ba_added <- FALSE
+    for (v in survival_variables) {
+      if (replace_or_skip(con, args$replace, ds, survival_table, v) == 'skip') {
+        next
+      }
       
-      ba_added <- TRUE
+      vs <- survival_columns(v)
+      if (is.null(Y[[vs$times]])) {
+        next
+      }
+      
+      cat('  survival analysis for ', ds, ':', v, ':', survival_table, '\n')
+
+      if (survival_table == 'survival') {      
+        keep <- 1:nrow(Y)
+      } else if (survival_table == 'survival_lg_nmi') {
+        keep <- Y$grade == 'lg' & Y$stage == 'nmi'
+      } else if (survival_table == 'survival_hg_mi') {
+        keep <- Y$grade == 'hg' & Y$stage == 'mi'
+      } else {
+        stop('invalid survival_table: ', survival_table)
+      }
+      
+      if (sum(keep, na.rm = TRUE) < 10) {
+        cat('  insufficient samples for ', ds, ' (', survival_table, ') -- skipping')
+        next
+      }
+
+      res <- coxph_test(X[,keep], Y[[vs$times]][keep], Y[[vs$outcomes]][keep])
+      gene <- row.names(res)
+      res.df <- data.frame(gene, dataset = ds, endpoint = v, res)
+      rownames(res.df) <- NULL
+      cat('  adding results to mongo ...\n')
+      m <- mongo_connect(survival_table)
+      m$insert(data.frame(res.df))
+      m$disconnect(gc = FALSE)
+      
+      if (!ba_added) {
+        res.df <- data.frame(gene, dataset = ds, endpoint = 'ba', res)
+        rownames(res.df) <- NULL
+        cat('  adding ba results to mongo ...\n')
+        m <- mongo_connect(survival_table)
+        m$insert(data.frame(res.df))
+        m$disconnect(gc = FALSE)
+        ba_added <- TRUE
+      }
+      
     }
     
+    cat('\n')
   }
-  
-  cat('\n')
 
 }
 
