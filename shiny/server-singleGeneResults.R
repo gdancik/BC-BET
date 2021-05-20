@@ -72,7 +72,7 @@ getSingleGeneResults <- reactive({
   res1 <- lapply(res1, summarize_de, count = FALSE)
   
   # get survival results
-  types <- c('survival')
+  types <- c('survival', 'survival_lg_nmi', 'survival_hg_mi')
   
   # specify endpoint -- for 'ba', do not change query
   # qry <- paste0('{"gene":"', gene, '", "endpoint":"dss"}')
@@ -118,6 +118,8 @@ render_de_table <- function(x, gene, var_type) {
     hideCol <- 5
   }
   
+  print(x)
+  
   renderDataTable({
     
     DT::datatable(x, colnames = colnames, rownames = FALSE,filter = 'none', selection = 'none',
@@ -160,7 +162,7 @@ observe({
   catn('gene = ', REACTIVE_SEARCH$gene)
   selected <- tolower(input$tabSummaryTable)
   
-  if (selected %in% c('survival')) {
+  if (selected %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
     output$tableSummary <- render_de_table(REACTIVE_SEARCH$results_survival[[selected]],
                                            REACTIVE_SEARCH$gene, selected)
   } else {
@@ -169,6 +171,31 @@ observe({
   }
 })
 
+
+generate_summary_plot <- function(df, labels, title) {
+
+# melt the data to create data frame of counts
+# arrange (order) by category (plotted with
+# 'a' on the top and 'd' on the bottom), and
+# add the label_position and number of datasets
+# for each variable
+m <- melt(df, id.vars = 'category') %>%
+  arrange(rev(category)) %>%
+  group_by(variable) %>%
+  #mutate(label_y = cumsum(value), n = sum(value))
+  mutate(label_y = label_position(value), n = sum(value))
+
+ggplot(m, aes(x = variable, y = value, fill = category)) +
+  geom_col(position = 'fill', color = 'black') +
+  geom_label(aes(y = label_y / n, label = value), vjust = .5,
+             colour = "black", fill = 'white') +
+  scale_fill_manual(values = c('darkred', 'pink', 'lightblue', 'darkblue'),
+                    labels = labels) +
+  theme_linedraw() + labs(x = '', y = 'proportion') + 
+  theme(legend.title = element_blank()) +
+  ggtitle(title)
+}
+
 output$plotSummary <- renderPlot({
   
   if (is.null(REACTIVE_SEARCH$results_de)) {
@@ -176,30 +203,19 @@ output$plotSummary <- renderPlot({
   }
   
   labels <- labels <- c('FC > 1, P < 0.05', 'FC > 1, P >= 0.05', 'FC < 1, P >= 0.05', 'FC < 1, P > 0.05')
-  
+  title <- 'Summary of differential expression results'
   df <- sapply(REACTIVE_SEARCH$results_de, function(x) table(x$category)) %>% data.frame()
   df$category <- rownames(df)
+  g1 <- generate_summary_plot(df, labels, title)
   
-  # melt the data to create data frame of counts
-  # arrange (order) by category (plotted with
-  # 'a' on the top and 'd' on the bottom), and
-  # add the label_position and number of datasets
-  # for each variable
-  m <- melt(df, id.vars = 'category') %>%
-    arrange(rev(category)) %>%
-    group_by(variable) %>%
-    #mutate(label_y = cumsum(value), n = sum(value))
-    mutate(label_y = label_position(value), n = sum(value))
+  labels <- gsub('FC','HR', labels)
+  title <- 'Summary of survival analysis'
+  df <- sapply(REACTIVE_SEARCH$results_survival, function(x) table(x$category)) %>% data.frame()
+  df$category <- rownames(df)
+  g2 <- generate_summary_plot(df, labels, title)
   
-  ggplot(m, aes(x = variable, y = value, fill = category)) +
-    geom_col(position = 'fill', color = 'black') +
-    geom_label(aes(y = label_y / n, label = value), vjust = .5,
-               colour = "black", fill = 'white') +
-    scale_fill_manual(values = c('darkred', 'pink', 'lightblue', 'darkblue'),
-                      labels = labels) +
-    theme_linedraw() + labs(x = '', y = 'proportion') + 
-    theme(legend.title = element_blank()) +
-    ggtitle('Summary of differential expression results')
+  plot_grid(g1,g2,nrow = 2)
+  
   
 })
 

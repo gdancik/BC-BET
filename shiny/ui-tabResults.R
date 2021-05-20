@@ -16,7 +16,9 @@ tabSummary <- tabPanel('Summary',
                           tabPanel('Tumor'),
                           tabPanel('Grade'),
                           tabPanel('Stage'),
-                          tabPanel('Survival')
+                          tabPanel('Survival'),
+                          tabPanel('Survival_LG_NMI'),
+                          tabPanel('Survival_HG_MI')
               ),
               withSpinner(dataTableOutput('tableSummary'))
             )
@@ -33,7 +35,11 @@ tabPlots <- tabPanel('Plots',
             tabPanel('Stage', h4('Comparison of muscle invasive (MI) and non-muscle invasive (NMI) tumor samples', class = 'plotHeader'),
                                 uiOutput('graphOutputStage')),
             tabPanel('Survival', h4('Kaplan Meier curves comparing high and low expressors', class = 'plotHeader'),
-                                uiOutput('graphOutputSurvival'))
+                                uiOutput('graphOutputSurvival')),
+            tabPanel('Survival (LG/NMI)', h4('Kaplan Meier curves comparing high and low expressors in patients with low grade, non-muscle invasive tumors', class = 'plotHeader'),
+                     uiOutput('graphOutputSurvivalLGNMI')),
+            tabPanel('Survival (HG/MI)', h4('Kaplan Meier curves comparing high and low expressors in patients with high grade, muscle-invasive tumors', class = 'plotHeader'),
+                     uiOutput('graphOutputSurvivalHGMI'))
         )
 )                        
 

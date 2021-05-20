@@ -11,21 +11,36 @@ source('mongo.R')
 
 # returns a data frame combining expression with 
 # clinical data specified by 'clin_column', e.g., 'stage'.
-get_mongo_df <- function(ds, gene_qry, clin_column = NULL) {
+get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
   m <- mongo_connect(paste0(ds, '_expr'))
   x <- m$find(gene_qry)
   m <- mongo_connect(paste0(ds, '_clinical'))
   y <- m$find()
   
   if (is.null(clin_column)) {
+    
+    if (!is.null(plotType)) {
+      stop('plotType must be NULL if clin_column is NULL')
+    }
     df <- data.frame(id = y$id, x = x$expr[[1]], y[,-1])
     colnames(df)[2] <- x$gene
     return(df)
-  }
+  } 
   
   if (length(x$expr[[1]]) == 0 || any(!clin_column%in%colnames(y))) {
     return(NULL)
   }
+  
+  keep <- NULL
+  if (plotType == 'survival_lg_nmi') {
+    keep <- y$grade %in% 'lg' & y$stage %in% 'nmi'
+  } else if (plotType == 'survival_hg_mi') {
+    keep <- y$grade %in% 'hg' & y$stage %in% 'mi'
+  }
+  
+  if (!is.null(keep) && sum(keep,na.rm=TRUE) < 10) {
+    return(NULL)
+  } 
   
   if (length(clin_column) == 1) {
     df <- data.frame(x = x$expr[[1]], y = y[,clin_column])
@@ -35,6 +50,10 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL) {
                      y2 = y[,clin_column[2]])
   }
 
+  if (!is.null(keep)) {
+    df <- df[keep,]
+  }
+  
   df %>% drop_na()
     
 }
@@ -142,8 +161,8 @@ generatePlots <- function(plotType, graphOutputId) {
   # datasets <- gsub('_.*$', '', collections$cursor$firstBatch$name)
   # datasets <- sort(datasets)
   
-  if (plotType == 'survival') {
-    results <- REACTIVE_SEARCH$results_survival[['survival']]
+  if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
+    results <- REACTIVE_SEARCH$results_survival[[plotType]]
   } else {
     results <- REACTIVE_SEARCH$results_de[[plotType]]
   }
@@ -166,13 +185,13 @@ generatePlots <- function(plotType, graphOutputId) {
     reverse <- TRUE
   }
 
-  cat('generating plot for:')
+  catn('generating plot for:')
   print(results)
   
   for (i in 1:nrow(results)) {
     
     columns <- plotType
-    if (plotType == 'survival') {
+    if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
       columns <- c('ba_time', 'ba_outcome')
       measure <- results$hr_med[i]
       p <- results$p_med[i]
@@ -185,7 +204,10 @@ generatePlots <- function(plotType, graphOutputId) {
     
 
     cat("getting data for: ", ds, "...\n")
-    df <- get_mongo_df(ds, qry, columns)
+    df <- get_mongo_df(ds, qry, columns, plotType)
+    
+    
+    
     
     if (is.null(df) || nrow(df) == 0) {
       catn('skipping ', df, ' ...')
@@ -198,7 +220,7 @@ generatePlots <- function(plotType, graphOutputId) {
   
     cat('  plotType ', plotType, ' for ', ds, '...\n')
     
-    if (plotType == 'survival') {
+    if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
       cat('  assigning plot to myplots')
       myplots[[count]] <- bcbet_km(df, ds, measure, p)
     } else {
@@ -211,7 +233,7 @@ generatePlots <- function(plotType, graphOutputId) {
   # create appropriate number of plot containers, including legend for
   # survival
   
-  if (plotType == 'survival' && count > 0) {
+  if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi') && count > 0) {
     count <- count + 1
 
     myplot1 <- myplots[[1]] 
@@ -253,6 +275,16 @@ survivalPlots <- reactive({
   generatePlots('survival', 'graphOutputSurvival')
 })
 
+survivalPlotsLGNMI <- reactive({
+  catn('survivalPlotslGNMI reactive...')
+  generatePlots('survival_lg_nmi', 'graphOutputSurvivalLGNMI')
+})
+
+survivalPlotsHGMI <- reactive({
+  generatePlots('survival_hg_mi', 'graphOutputSurvivalHGMI')
+})
+
+
 observeEvent(list(input$resultsPage, input$plotsPage), {
   
   if (input$resultsPage != "Plots") {
@@ -273,6 +305,10 @@ observeEvent(list(input$resultsPage, input$plotsPage), {
     return()
   } else if (input$plotsPage == 'Survival') {
     survivalPlots()
+  } else if (input$plotsPage == 'Survival (LG/NMI)') {
+    survivalPlotsLGNMI()
+  } else if (input$plotsPage == 'Survival (HG/MI)') {
+    survivalPlotsHGMI()
   }
   
 }, ignoreInit = TRUE)
