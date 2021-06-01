@@ -130,15 +130,6 @@ survival_columns <- function(type) {
 # res_km <- coxph_test(X[1:100,], Y[[v2$times]], Y[[v2$outcomes]])
 
 
-#############################################################################
-# Connect to Database 
-#############################################################################
-
-#############################################################################
-# Create tables if they do not exist
-#############################################################################
-
-
 survival_variables <- NULL
 if (args$surv == "yes") {
   survival_variables <- c('dss', 'os', 'rfs')
@@ -212,7 +203,6 @@ for (ds in datasets) {
     }
     
   } # end loop for de_variables
-  
   
   # handle survival if necessary
   if (args$surv == 'no') {

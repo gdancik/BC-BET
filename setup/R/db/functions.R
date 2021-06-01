@@ -116,6 +116,46 @@ mongo_connect <- function(collection, user = "root", pass = "password",
 }
 
 
+get_stats <- function(ds, Y) {
+  
+  count_stats <- function(x) {
+    t <- table(x)
+    names(t) <- paste0('N.', names(t))
+    t
+  }
+  
+  keep <- c('tumor', 'grade', 'stage') 
+  keep <- intersect(keep, colnames(Y))
+  
+  stats <- plyr::alply(Y[keep], 2, count_stats)
+  stats <- unlist(stats)
+  if (!is.null(stats)) {
+    names(stats) <- gsub('\\d+\\.', '', names(stats))
+  }
+  
+  get_survival_n <- function(column, Y) {
+    keep <- paste0(column, c('_time', '_outcome'))
+    if ( sum(keep %in% colnames(Y)) != 2) {
+      return(NULL)
+    }
+    n <- min(apply(Y[,keep], 2, function(x) sum(!is.na(x))))
+    #names(n) <- column
+    n
+  }
+  
+  s <- sapply(c('dss', 'os', 'rfs', 'ba'), get_survival_n, Y = Y)
+  s <- unlist(s)
+
+  if (!is.null(s) && !is.null(stats)) {
+    return(data.frame(dataset = ds, t(stats), t(s)))
+  } else if (!is.null(s)) {
+    return(data.frame(dataset = ds, t(s)))
+  }
+  
+  data.frame(dataset = ds, t(stats))
+  
+}
+
 # reads expression (X) and clinical (Y) data and adds to mongo db
 addMongoData <- function(ds, D = NULL) {
 
@@ -135,9 +175,21 @@ addMongoData <- function(ds, D = NULL) {
   x <- paste0('{', '"gene": "',rownames(x), '",',df, '}')
   m$insert(x)
   m$index(add = 'gene')
-  m$disconnect()
+  m$disconnect(gc = FALSE)
 
   m <- mongo_connect(paste0(ds, '_clinical'))
+  m$drop()
   m$insert(D$Y)
-  m$disconnect()
+  m$disconnect(gc = FALSE)
+  
+  m <- mongo_connect('stats')
+  
+  qry <- paste0('{"dataset":"', ds, '"}')
+  m$remove(qry)
+  
+  stats <- get_stats(ds, D$Y)
+  m$insert(stats)
+  m$disconnect(gc = FALSE)
+  
+  
 }
