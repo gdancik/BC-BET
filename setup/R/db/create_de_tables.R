@@ -19,11 +19,11 @@ parser$add_argument("--datasets", default="all",
 parser$add_argument("--expression", default = "no",
                     help = "add expression data (yes/no) [default %(default)s]")
 parser$add_argument("--var", default="all",
-                   help="comma-separated list of clinical variables to process; must be \"all\" if expression is \"yes\" [default %(default)s]")
+                   help="comma-separated list of clinical variables to process, or \"none\"; must be \"all\" if expression is \"yes\" [default %(default)s]")
 parser$add_argument("--survival", default = "yes",
                     help = "carry out survival analysis (yes/no) [default %(default)s]")
 parser$add_argument("--drop", default="no",
-                    help="first drop tables specified by --var or --surv (yes/no) [default %(default)s]")
+                    help="(NOT IMPLEMENTED) first drop tables specified by --var or --surv (yes/no) [default %(default)s]")
 parser$add_argument("--replace", default = "no",
                     help = paste0('replace dataset/variable combinations already in db (yes/no)',
                                   'if "yes", we first delete rows from db [default %(default)s]'))
@@ -244,8 +244,11 @@ for (ds in datasets) {
         stop('invalid survival_table: ', survival_table)
       }
       
-      if (sum(keep, na.rm = TRUE) < 10) {
-        cat('  insufficient samples for ', ds, ' (', survival_table, ') -- skipping')
+      t <- table(Y[[vs$outcome]][keep])
+      
+      # currently skip if n < 10 or more than 90% of patients are censured
+      if (sum(t) < 10 || proportions(t)['0']>0.90) {
+        cat('  insufficient samples for ', ds, ' (', survival_table, ') -- skipping\n')
         next
       }
 
