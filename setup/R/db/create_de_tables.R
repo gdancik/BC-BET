@@ -7,6 +7,9 @@ suppressPackageStartupMessages(library(AUC))
 #   (https://github.com/gdancik/lamp-rm)
 ####################################################################
 
+# Note: this needs to be consistent with /shiny/
+HG_MI_COHORTS <- c('mda1','mda2')
+
 source('functions.R')
 
 library(argparse)
@@ -46,9 +49,9 @@ if (args$var == 'none' && args$survival == 'no') {
   stop('var cannot be none when survival is no')
 }
 
-if (args$expression == "yes" && args$var != "all") {
-  stop("var must be 'all' when mongo is 'yes'")
-}
+# if (args$expression == "yes" && args$var != "all") {
+#   stop("var must be 'all' when mongo is 'yes'")
+# }
 
 # set up drop/replace:
 # - if we are dropping DE tables, don't replace the data
@@ -216,6 +219,11 @@ for (ds in datasets) {
       if (replace_or_skip(con, args$replace, ds, survival_table, v) == 'skip') {
         next
       }
+
+      # skip HG_MI_COHORTS if we are looking at survival or lg_nmi
+      if (ds %in% HG_MI_COHORTS && survival_table %in% c('survival', 'survival_lg_nmi')) {
+        next
+      }
       
       vs <- survival_columns(v)
       if (is.null(Y[[vs$times]])) {
@@ -229,7 +237,11 @@ for (ds in datasets) {
       } else if (survival_table == 'survival_lg_nmi') {
         keep <- Y$grade == 'lg' & Y$stage == 'nmi'
       } else if (survival_table == 'survival_hg_mi') {
-        keep <- Y$grade == 'hg' & Y$stage == 'mi'
+        if (ds %in% HG_MI_COHORTS) {
+          keep <- 1:nrow(Y)
+        } else {
+          keep <- Y$grade == 'hg' & Y$stage == 'mi'
+        }
       } else {
         stop('invalid survival_table: ', survival_table)
       }
