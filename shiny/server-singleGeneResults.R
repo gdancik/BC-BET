@@ -120,7 +120,10 @@ render_de_table <- function(x, gene, var_type) {
   
   print(x)
   
-  renderDataTable({
+  # catn('display iris now...\n')
+  # return(renderDataTable(DT::datatable(iris)))
+  
+  DT::renderDataTable({
     
     DT::datatable(x, colnames = colnames, rownames = FALSE,filter = 'none', selection = 'none',
                   extensions = 'Buttons',
@@ -141,14 +144,14 @@ render_de_table <- function(x, gene, var_type) {
                       ))
                   
                   
-                  )) %>% formatStyle('category',target = 'row',
-      backgroundColor = styleEqual(c('a','b','c','d'), 
+                  )) %>% DT::formatStyle('category',target = 'row',
+      backgroundColor = DT::styleEqual(c('a','b','c','d'), 
                                    c('darkred', 'pink', 'lightblue', 'darkblue')
        ), #fontWeight = 'bold',
-      color = styleEqual(c('a','b','c','d'),
+      color = DT::styleEqual(c('a','b','c','d'),
                          c('white', 'black', 'black', 'white')
       )
-    ) %>% formatRound(roundCols, c(2,3))
+    ) %>% DT::formatRound(roundCols, c(2,3))
     
   })
 }

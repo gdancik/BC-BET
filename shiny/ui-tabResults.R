@@ -3,6 +3,7 @@
 ############################################################
 
 library(shinycssloaders)
+library(DT)
 
 # Summary tab
 tabSummary <- tabPanel('Summary',
@@ -20,7 +21,7 @@ tabSummary <- tabPanel('Summary',
                           tabPanel('Survival_LG_NMI'),
                           tabPanel('Survival_HG_MI')
               ),
-              withSpinner(dataTableOutput('tableSummary'))
+              withSpinner(DT::dataTableOutput('tableSummary'))
             )
     )
 )

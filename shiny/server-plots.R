@@ -12,6 +12,13 @@ source('mongo.R')
 # returns a data frame combining expression with 
 # clinical data specified by 'clin_column', e.g., 'stage'.
 get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
+  
+  HG_MI_COHORTS <- c('mda1', 'mda2')
+  
+  if (ds %in% HG_MI_COHORTS && !is.null(plotType) && plotType != 'survival_hg_mi') {
+      return(NULL)
+  }
+  
   m <- mongo_connect(paste0(ds, '_expr'))
   x <- m$find(gene_qry)
   m <- mongo_connect(paste0(ds, '_clinical'))
@@ -32,10 +39,17 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
   }
   
   keep <- NULL
+  
+  
   if (plotType == 'survival_lg_nmi') {
     keep <- y$grade %in% 'lg' & y$stage %in% 'nmi'
   } else if (plotType == 'survival_hg_mi') {
-    keep <- y$grade %in% 'hg' & y$stage %in% 'mi'
+    
+    if (ds %in% HG_MI_COHORTS) {
+      keep <- NULL
+    } else {
+      keep <- y$grade %in% 'hg' & y$stage %in% 'mi'
+    }
   }
   
   if (!is.null(keep) && sum(keep,na.rm=TRUE) < 10) {
@@ -205,8 +219,6 @@ generatePlots <- function(plotType, graphOutputId) {
 
     cat("getting data for: ", ds, "...\n")
     df <- get_mongo_df(ds, qry, columns, plotType)
-    
-    
     
     
     if (is.null(df) || nrow(df) == 0) {
