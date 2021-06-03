@@ -115,7 +115,11 @@ mongo_connect <- function(collection, user = "root", pass = "password",
   mongo(url = URI, collection = collection, db = 'bcbet')
 }
 
-
+#' Gets sample size stats and inserts to mongo collection
+#'
+#' @param ds The name of the datasets
+#' @param Y The data frame containing clinical data
+#' 
 get_stats <- function(ds, Y) {
   
   count_stats <- function(x) {
@@ -127,11 +131,25 @@ get_stats <- function(ds, Y) {
   keep <- c('tumor', 'grade', 'stage') 
   keep <- intersect(keep, colnames(Y))
   
-  stats <- plyr::alply(Y[keep], 2, count_stats)
-  stats <- unlist(stats)
-  if (!is.null(stats)) {
-    names(stats) <- gsub('\\d+\\.', '', names(stats))
+  stats <- lapply(Y[keep], count_stats)
+  stats <- lapply(stats, function(x,ds) data.frame(dataset = ds, data.frame(rbind(x))), ds = ds)
+  
+  if (length(stats) > 0) {
+    collections <- paste0('stats_', names(stats))
+    for (i in 1:length(collections)) {
+      m <- mongo_connect(collections[i])
+      qry <- paste0('{"dataset":"',ds, '"}')
+      m$remove(qry)
+      rownames(stats[[i]]) <- NULL
+      m$insert(stats[[i]])
+    }
   }
+    
+  # stats <- plyr::alply(Y[keep], 2, count_stats)
+  # stats <- unlist(stats)
+  # if (!is.null(stats)) {
+  #   names(stats) <- gsub('\\d+\\.', '', names(stats))
+  # }
   
   get_survival_n <- function(column, Y) {
     keep <- paste0(column, c('_time', '_outcome'))
@@ -145,15 +163,22 @@ get_stats <- function(ds, Y) {
   
   s <- sapply(c('dss', 'os', 'rfs', 'ba'), get_survival_n, Y = Y)
   s <- unlist(s)
-
-  if (!is.null(s) && !is.null(stats)) {
-    return(data.frame(dataset = ds, t(stats), t(s)))
-  } else if (!is.null(s)) {
-    return(data.frame(dataset = ds, t(s)))
+  if (!is.null(s)) {
+    df <- data.frame(dataset = ds, t(s))
+    m <- mongo_connect('stats_survival')
+    qry <- paste0('{"dataset":"',ds, '"}')
+    m$remove(qry)
+    m$insert(df)
   }
   
-  data.frame(dataset = ds, t(stats))
-  
+  # if (!is.null(s) && !is.null(stats)) {
+  #   return(data.frame(dataset = ds, t(stats), t(s)))
+  # } else if (!is.null(s)) {
+  #   return(data.frame(dataset = ds, t(s)))
+  # }
+
+  # data.frame(dataset = ds, t(stats))
+
 }
 
 # reads expression (X) and clinical (Y) data and adds to mongo db
@@ -182,14 +207,6 @@ addMongoData <- function(ds, D = NULL) {
   m$insert(D$Y)
   m$disconnect(gc = FALSE)
   
-  m <- mongo_connect('stats')
-  
-  qry <- paste0('{"dataset":"', ds, '"}')
-  m$remove(qry)
-  
-  stats <- get_stats(ds, D$Y)
-  m$insert(stats)
-  m$disconnect(gc = FALSE)
-  
+  get_stats(ds, D$Y)
   
 }

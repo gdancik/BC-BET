@@ -14,7 +14,7 @@ source('functions.R')
 
 library(argparse)
 parser <- ArgumentParser(description = paste0("Creates BC-BET mongo database. ",
-                                              "NOTE: writing expression data will delete corresponding result data")
+                                              "NOTE: writing expression data will delete corresponding result data and update the stats")
 )
 
 parser$add_argument("--datasets", default="all",
@@ -45,12 +45,12 @@ for (p in c('drop', 'replace', 'expression', 'survival')) {
   }
 }
 
-if (args$var == 'none' && args$survival == 'no') {
-  stop('var cannot be none when survival is no')
-}
+# if (args$var == 'none' && args$survival == 'no') {
+#   stop('var cannot be none when survival is no')
+# }
 
 # if (args$expression == "yes" && args$var != "all") {
-#   stop("var must be 'all' when mongo is 'yes'")
+#   stop("var must be 'all' when expression is 'yes'")
 # }
 
 # set up drop/replace:
