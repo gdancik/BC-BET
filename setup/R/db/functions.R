@@ -115,12 +115,50 @@ mongo_connect <- function(collection, user = "root", pass = "password",
   mongo(url = URI, collection = collection, db = 'bcbet')
 }
 
+#' Adds survival stats to mongo 'collection' 
+#'
+#' @param ds The name of the datasets
+#' @param Y The data frame containing clinical data
+#' @collection The name of the collection (e.g., 'survival')
+#' @subset A vector for subsetting samples, e.g., c('lg', 'nmi')
+#' 
+
+add_survival <- function(ds, Y, collection, subset = NULL) {
+  
+  s <- sapply(c('dss', 'os', 'rfs', 'ba'), get_survival_n, Y = Y, subset = subset)
+  s <- unlist(s)
+  if (!is.null(s)) {
+    df <- data.frame(dataset = ds, t(s))
+    m <- mongo_connect(collection)
+    qry <- paste0('{"dataset":"',ds, '"}')
+    m$remove(qry)
+    m$insert(df)
+  }
+}
+
+# calculate number of samples for survival analysis
+get_survival_n <- function(column, Y, subset = NULL) {
+  keep <- paste0(column, c('_time', '_outcome'))
+  if ( sum(keep %in% colnames(Y)) != 2) {
+    return(NULL)
+  } else if (!is.null(subset)) {
+    if (!all(c('grade', 'stage') %in% colnames(Y))) {
+      return(NULL)
+    }
+    Y <- dplyr::filter(Y, grade %in% subset[1], stage %in% subset[2])
+  }
+  
+  n <- min(apply(Y[,keep], 2, function(x) sum(!is.na(x))))
+  #names(n) <- column
+  n
+}
+
 #' Gets sample size stats and inserts to mongo collection
 #'
 #' @param ds The name of the datasets
 #' @param Y The data frame containing clinical data
 #' 
-get_stats <- function(ds, Y) {
+get_stats <- function(ds, Y, hg_mi_cohorts) {
   
   count_stats <- function(x) {
     t <- table(x)
@@ -151,24 +189,12 @@ get_stats <- function(ds, Y) {
   #   names(stats) <- gsub('\\d+\\.', '', names(stats))
   # }
   
-  get_survival_n <- function(column, Y) {
-    keep <- paste0(column, c('_time', '_outcome'))
-    if ( sum(keep %in% colnames(Y)) != 2) {
-      return(NULL)
-    }
-    n <- min(apply(Y[,keep], 2, function(x) sum(!is.na(x))))
-    #names(n) <- column
-    n
-  }
-  
-  s <- sapply(c('dss', 'os', 'rfs', 'ba'), get_survival_n, Y = Y)
-  s <- unlist(s)
-  if (!is.null(s)) {
-    df <- data.frame(dataset = ds, t(s))
-    m <- mongo_connect('stats_survival')
-    qry <- paste0('{"dataset":"',ds, '"}')
-    m$remove(qry)
-    m$insert(df)
+  if (ds %in% hg_mi_cohorts) {
+    add_survival(ds, Y, 'stats_survival_hg_mi')
+  } else {
+    add_survival(ds, Y, 'stats_survival')
+    add_survival(ds, Y, 'stats_survival_lg_nmi', c('lg', 'nmi'))
+    add_survival(ds, Y, 'stats_survival_hg_mi', c('hg', 'mi'))
   }
   
   # if (!is.null(s) && !is.null(stats)) {
@@ -206,7 +232,5 @@ addMongoData <- function(ds, D = NULL) {
   m$drop()
   m$insert(D$Y)
   m$disconnect(gc = FALSE)
-  
-  get_stats(ds, D$Y)
   
 }

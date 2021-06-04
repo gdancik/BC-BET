@@ -180,6 +180,7 @@ for (ds in datasets) {
   if (args$expression == "yes") {
     cat('  adding ', ds, ' data to mongo...\n')
     addMongoData(ds, DS)
+    get_stats(ds, DS$Y, HG_MI_COHORTS)
   }
   
   X <- DS$X
