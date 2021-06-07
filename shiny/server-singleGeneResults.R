@@ -82,14 +82,53 @@ getSingleGeneResults <- reactive({
     m$find(qry, fields = '{"_id":0, "gene":1, "dataset":1, "endpoint":1, "hr_med":1, "p_med":1}')
   }, qry = qry, USE.NAMES = TRUE, simplify = FALSE)
   
+  
+  # get specified endpoint, for now we assume 'ba' 
+  get_endpoint <- function(x) {
+    if (nrow(x) == 0) {
+      return(x)
+    }
+    x  %>% arrange(endpoint) %>% group_by(dataset) %>% slice_head()
+  }
+  
   # if 'ba', then take first endpoint for each dataset (dss, os, rfs)
-  res2 <- lapply(res2, function(x)  {x  %>% arrange(endpoint) %>% group_by(dataset) %>% slice_head()}      )
+  res2 <- lapply(res2, get_endpoint)
   
   res2 <- lapply(res2, summarize_de, fc_col = 'hr_med', p_col = 'p_med', count = FALSE)
   
+  add_stats <- function(n, x, survival = FALSE) {
+    x <- x[[n]]
+    if (nrow(x) == 0) {
+      return(x)
+    }
+    
+    m <- mongo_connect(paste0('stats_', n))
+    stats <- m$find()
+    m <- match(x$dataset, stats$dataset)
+    
+    columns <- 3:2
+    if (n == 'tumor') columns <- 2:3
+    
+    .after = 2
+    
+    if (survival) {
+      return(tibble::add_column(x, n = stats$ba[m], .after = 3))
+    }
+
+    tibble::add_column(x, stats[m, columns, drop = FALSE], .after = 2)
+  }
+  
+  n <- names(res1)
+  res1 <- lapply(n, add_stats, x = res1)
+  names(res1) <- n
+    
+  
+  n <- names(res2)
+  res2 <- lapply(n, add_stats, x = res2, survival = TRUE)
+  names(res2) <- n
+  
   REACTIVE_SEARCH$results_de <- res1
   REACTIVE_SEARCH$results_survival <- res2
-  
   
   
 })
@@ -104,7 +143,11 @@ render_de_table <- function(x, gene, var_type) {
   
   colnames <- c('Dataset' = 'dataset', 'Gene' = 'gene', 'FC' = 'fc', 
                 'P-value' = 'pt', 'P-value' = 'p_med', 'HR' = 'hr_med',
-                'Endpoint' = 'endpoint')
+                'Endpoint' = 'endpoint', 
+                'N' = 'n', 
+                'N_tumor' = 'N_tumor', 'N_normal' = 'N_normal',
+                'N_nmi' = 'N_nmi',  'N_mi' ='N_mi', 
+                'N_lg' = 'N_lg', 'N_hg' = 'N_hg')
   
   colnames <- colnames[colnames%in% colnames(x)]
   
@@ -113,11 +156,11 @@ render_de_table <- function(x, gene, var_type) {
     roundCols <- c('HR', 'P-value')
   }
   
-  hideCol <- 4
-  if ('HR' %in% roundCols) {
-    hideCol <- 5
-  }
-  
+  hideCol <- 6
+  # if ('HR' %in% roundCols) {
+  #   hideCol <- 5
+  # }
+  # 
   print(x)
   
   # catn('display iris now...\n')
@@ -133,7 +176,8 @@ render_de_table <- function(x, gene, var_type) {
                               dom = 'Bfrtip',
                                 buttons = list(
                                   list(
-                                    extend = 'csv', text = btnText, filename = filename
+                                    extend = 'csv', text = btnText, filename = filename,
+                                    exportOptions = list(columns = ":visible")
                                   ),
                                   list(
                                     extend = "collection",

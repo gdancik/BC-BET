@@ -1,4 +1,4 @@
-
+library(mongolite)
 mongo_connect <- function(collection, user = "root", pass = "password",
                           host = "0.0.0.0:2000") {
   # Using plain-text
