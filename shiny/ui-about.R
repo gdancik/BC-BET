@@ -10,20 +10,20 @@ tabAbout = tabPanel("About",
     ## citation
       div(class = 'panel-heading', 
           h3(class='panel-title', style = 'font-weight: bold', 
-             "Citation")
+             "Publications")
       ),
-      div(class = "panel-body", style = 'font-size:110%;',
+      div(class = "panel-body",
         HTML("If you use <i>BC-BET</i> in your work, please cite the following publication", 
         "(<a href = 'http://biomedcentral.com/1471-2490/15/59'>link</a>):</br></br>",
-        "Dancik, G.M. An online tool for evaluating diagnostic and prognostic gene 
-         expression biomarkers in bladder cancer. <i>BMC Urol</i> 2015, 15:59.")
+        "<ul><li>Dancik, G.M. An online tool for evaluating diagnostic and prognostic gene 
+         expression biomarkers in bladder cancer. <i>BMC Urol</i> 2015, 15:59.</li></ul>")
         ),
         
       
     ## contributors  
     div(class = 'panel-heading', 
         h3(class='panel-title', style = 'font-weight: bold', 
-           "Contributors")
+           "Primary Contributors")
     ),
     div(class = "panel-body",
         HTML("<ul>"),
@@ -36,15 +36,24 @@ tabAbout = tabPanel("About",
          role("Contributor")
          ),
         HTML("</li>"),
-        
+        HTML("</ul>")
+    ), # end panel body
+    
+    ## contributors  
+    div(class = 'panel-heading', 
+        h3(class='panel-title', style = 'font-weight: bold', 
+           "Additional Contributors")
+    ),
+    div(class = "panel-body",
+        HTML("<ul>"),
         HTML("<li>"),
-        p(span(style='font-weight:bold', "John Doe"), "is a ...", 
+        p(span(style='font-weight:bold', "Christopher Kelly"), "is an undergraduate Computer Science major, ", 
+          a(href = "https://easternct.edu", "Eastern Connecticut State University"), "(Wilimantic, CT).", 
           role("Contributor")
         ),
-        
         HTML("</li>"),
         HTML("</ul>")
-    )
+    ) # end panel body
 
     
   )
