@@ -72,16 +72,20 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
     
 }
 
-bcbet_boxplot <- function(df,ds, measure, p, reverse = FALSE, upper = TRUE) {
+bcbet_boxplot <- function(df,ds, measure_name, measure, p, reverse = FALSE, upper = TRUE) {
 
-  p <- round(p)
+  p <- round(p, 2)
   if (p < 0.01) {
     p <- 'P < 0.01'
   } else {
     p <- paste0('P = ', p)
   }
   
-  measure <- paste0('FC = ', round(measure, 2))
+  if (measure_name == 'fc') {
+    measure <- paste0('FC = ', round(measure, 2))
+  } else {
+    measure <- paste0('AUC = ', round(measure, 2))
+  }
   
   
   title <- paste0(ds, '\n', measure, ' (', p, ')')
@@ -210,8 +214,8 @@ generatePlots <- function(plotType, graphOutputId) {
       measure <- results$hr_med[i]
       p <- results$p_med[i]
     } else {
-      measure <- results$fc[i]
-      p <- results$pt[i]
+      measure <- results[[input$measure]][i]
+      p <- results[[input$pvalue]][i]
     }
     
     ds <- results$dataset[i]
@@ -236,7 +240,8 @@ generatePlots <- function(plotType, graphOutputId) {
       cat('  assigning plot to myplots')
       myplots[[count]] <- bcbet_km(df, ds, measure, p)
     } else {
-      myplots[[count]] <- bcbet_boxplot(df, ds, measure, p, upper = upper, reverse = reverse)
+      
+      myplots[[count]] <- bcbet_boxplot(df, ds, input$measure, measure, p, upper = upper, reverse = reverse)
     }
     
     count <- count + 1

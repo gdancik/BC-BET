@@ -78,6 +78,7 @@ getSingleGeneResults <- reactive({
     m$find(qry, fields = fields)
   }, qry = qry, cols = c(input$measure, input$pvalue), USE.NAMES = TRUE, simplify = FALSE)
   
+  res1 <- lapply(res1, arrange, dataset)
   res1 <- lapply(res1, summarize_de, fc_col = input$measure, p_col = input$pvalue, count = FALSE)
   
   # get survival results
@@ -91,6 +92,7 @@ getSingleGeneResults <- reactive({
     m$find(qry, fields = '{"_id":0, "gene":1, "dataset":1, "endpoint":1, "hr_med":1, "p_med":1}')
   }, qry = qry, USE.NAMES = TRUE, simplify = FALSE)
   
+  res2 <- lapply(res2, arrange, dataset)
   
   # get specified endpoint, for now we assume 'ba' 
   get_endpoint <- function(x) {
