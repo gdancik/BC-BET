@@ -2,6 +2,7 @@ library(ggplot2)
 library(dplyr)
 library(reshape)
 library(DT)
+library(xlsx)
 
 source('mongo.R')
 
@@ -131,7 +132,19 @@ getSingleGeneResults <- reactive({
   REACTIVE_SEARCH$results_survival <- res2
   
   
+  
 })
+
+bcbet_column_names <- function() {
+  return(c('Dataset' = 'dataset', 'Gene' = 'gene', 'FC' = 'fc', 
+           'P-value' = 'pt', 'P-value' = 'p_med', 'HR' = 'hr_med',
+           'Endpoint' = 'endpoint', 
+           'N' = 'n', 
+           'N_tumor' = 'N_tumor', 'N_normal' = 'N_normal',
+           'N_nmi' = 'N_nmi',  'N_mi' ='N_mi', 
+           'N_lg' = 'N_lg', 'N_hg' = 'N_hg')
+  )
+}
 
 render_de_table <- function(x, gene, var_type) {
   if (is.null(x)) {
@@ -139,16 +152,9 @@ render_de_table <- function(x, gene, var_type) {
   }
   
   filename <- paste0('bcbet_', gene, '_', var_type)
-  btnText <- paste('Download', var_type, 'table')
+  btnText <- paste('Download', var_type, 'table (csv)')
   
-  colnames <- c('Dataset' = 'dataset', 'Gene' = 'gene', 'FC' = 'fc', 
-                'P-value' = 'pt', 'P-value' = 'p_med', 'HR' = 'hr_med',
-                'Endpoint' = 'endpoint', 
-                'N' = 'n', 
-                'N_tumor' = 'N_tumor', 'N_normal' = 'N_normal',
-                'N_nmi' = 'N_nmi',  'N_mi' ='N_mi', 
-                'N_lg' = 'N_lg', 'N_hg' = 'N_hg')
-  
+  colnames <- bcbet_column_names()
   colnames <- colnames[colnames%in% colnames(x)]
   
   roundCols <- c('FC', 'P-value')
@@ -176,18 +182,18 @@ render_de_table <- function(x, gene, var_type) {
                               dom = 'Bfrtip',
                                 buttons = list(
                                   list(
-                                    extend = 'csv', text = btnText, filename = filename,
-                                    exportOptions = list(columns = ":visible")
-                                  ),
-                                  list(
                                     extend = "collection",
-                                    text = 'Download all results',
+                                    text = 'Download all results (xlsx)',
                                       action = DT::JS("function ( e, dt, node, config ) {
-                                          alert( 'Button activated' );
+                                          //alert( 'Button activated' );
+                                          document.getElementById('downloadAllResults').click();
                                       }")
-                      ))
-                  
-                  
+                      ),
+                        list(
+                          extend = 'csv', text = btnText, filename = filename,
+                          exportOptions = list(columns = ":visible")
+                        )
+                      )
                   )) %>% DT::formatStyle('category',target = 'row',
       backgroundColor = DT::styleEqual(c('a','b','c','d'), 
                                    c('darkred', 'pink', 'lightblue', 'darkblue')
@@ -265,5 +271,39 @@ output$plotSummary <- renderPlot({
   
   
 })
+
+write_sheet <- function(sheet, RES, filename) {
+  x <- RES[[sheet]]
+  x$category <- NULL
+  
+  # format columns
+  columns <- bcbet_column_names()
+  
+  m <- match(colnames(x), columns)
+
+  colnames(x)[!is.na(m)] <- names(columns)[m[!is.na(m)]]
+  
+  write.xlsx(x, sheetName = toupper(sheet), file = filename,
+           row.names = FALSE, append = TRUE)
+}
+
+write_all_results <- function(filename) {
+  res1 <- isolate(REACTIVE_SEARCH$results_de)
+  res2 <- isolate(REACTIVE_SEARCH$results_survival)
+  sapply(names(res1), write_sheet, RES = res1, filename = filename)
+  sapply(names(res2), write_sheet, RES = res2, filename = filename)
+} 
+
+# Not run: ------------------------------------
+# In server.R:
+output$downloadAllResults <- downloadHandler(
+  filename = function() {
+    paste('bcbet_', REACTIVE_SEARCH$gene, '.xlsx', sep='')
+  },
+  content = function(con) {
+    write_all_results(con)
+    #write.csv(data, con)
+  }
+)
 
 

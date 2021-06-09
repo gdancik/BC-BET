@@ -18,6 +18,8 @@ shinyUI(
     tabPanel('Home', 
              HTML("<link href='https://fonts.googleapis.com/css?family=Courgette' rel='stylesheet' type='text/css'>"),
              HTML("<script src='bcbet.js'></script>"),
+             downloadLink('downloadAllResults', 'Download'),
+             #br(),
              welcomePage),
     tabAbout,
     

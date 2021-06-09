@@ -22,9 +22,14 @@ shinyServer(function(input, output, session) {
   shinyjs::disable('btnGeneSearch')
   shinyjs::runjs("$('#please-wait').addClass('hide');")
   
+  shinyjs::hide('downloadAllResults')
+  
   if (GLOBAL$TEST) {
     updateQueryString('?_inputs_&geneInput="HRAS"&page="Results"',
                       mode = 'push')
   }
   
 })
+
+
+
