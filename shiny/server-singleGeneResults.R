@@ -10,13 +10,18 @@ source('mongo.R')
 # to ensure that categories/labels are plotted in the correct order
 summarize_de <- function(x, fc_col = 'fc', p_col = 'pt', count = TRUE) {
 
-  category <- vector('character', nrow(x))
-  category[x[[fc_col]] > 1 & x[[p_col]] < 0.05] <- 'a'
-  category[x[[fc_col]] > 1 & x[[p_col]] >= 0.05] <- 'b'
-  category[x[[fc_col]] < 1 & x[[p_col]] >= 0.05] <- 'c'
-  category[x[[fc_col]] < 1 & x[[p_col]] < 0.05] <- 'd'
+  cutoff <- 1
+  if (fc_col == 'auc') {
+    cutoff <- 0.5
+  }
   
-  category <- factor(category, levels = c('a','b','c','d'))
+  category <- rep('e', nrow(x)) #vector('character', nrow(x))
+  category[x[[fc_col]] > cutoff & x[[p_col]] < 0.05] <- 'a'
+  category[x[[fc_col]] > cutoff & x[[p_col]] > 0.05] <- 'b'
+  category[x[[fc_col]] < cutoff & x[[p_col]] > 0.05] <- 'c'
+  category[x[[fc_col]] < cutoff & x[[p_col]] < 0.05] <- 'd'
+  
+  category <- factor(category, levels = c('a','b','c','d', 'e'))
   
 
   if (count) {
@@ -29,7 +34,7 @@ summarize_de <- function(x, fc_col = 'fc', p_col = 'pt', count = TRUE) {
 }
 
 # calculates the ylabel position given a count vector 'x',
-# corresponding to 'a'-'d' categories;
+# corresponding to 'a'-'e' categories;
 # label is positioned in the center of the y-range
 label_position <- function(x) {
   n <- length(x)
@@ -65,12 +70,15 @@ getSingleGeneResults <- reactive({
   
   # get DE results
   types <- c('tumor', 'grade', 'stage')
-  res1 <- sapply(types, function(x, qry) {
+  res1 <- sapply(types, function(x, qry, cols) {
     m <- mongo_connect(x)
-    m$find(qry, fields = '{"_id":0, "gene":1, "dataset":1, "fc":1, "pt":1}')
-  }, qry = qry, USE.NAMES = TRUE, simplify = FALSE)
+    fields <- paste0('{"_id":0, "gene":1, "dataset":1, ',
+                     paste0('"', cols, '":1', collapse = ', '),
+              '}')
+    m$find(qry, fields = fields)
+  }, qry = qry, cols = c(input$measure, input$pvalue), USE.NAMES = TRUE, simplify = FALSE)
   
-  res1 <- lapply(res1, summarize_de, count = FALSE)
+  res1 <- lapply(res1, summarize_de, fc_col = input$measure, p_col = input$pvalue, count = FALSE)
   
   # get survival results
   types <- c('survival', 'survival_lg_nmi', 'survival_hg_mi')
@@ -136,8 +144,12 @@ getSingleGeneResults <- reactive({
 })
 
 bcbet_column_names <- function() {
-  return(c('Dataset' = 'dataset', 'Gene' = 'gene', 'FC' = 'fc', 
-           'P-value' = 'pt', 'P-value' = 'p_med', 'HR' = 'hr_med',
+  return(c('Dataset' = 'dataset', 'Gene' = 'gene', 
+           'FC' = 'fc', 'AUC' = 'auc', 
+           'P-value' = 'pt', 
+           'P-value' = 'p_med', 
+           'P-value' = 'pw',
+           'HR' = 'hr_med',
            'Endpoint' = 'endpoint', 
            'N' = 'n', 
            'N_tumor' = 'N_tumor', 'N_normal' = 'N_normal',
@@ -157,10 +169,8 @@ render_de_table <- function(x, gene, var_type) {
   colnames <- bcbet_column_names()
   colnames <- colnames[colnames%in% colnames(x)]
   
-  roundCols <- c('FC', 'P-value')
-  if ('HR' %in% names(colnames)) {
-    roundCols <- c('HR', 'P-value')
-  }
+  roundCols <- c('FC', 'AUC', 'HR', 'P-value')
+  roundCols <- roundCols[roundCols %in% names(colnames)]
   
   hideCol <- 6
   # if ('HR' %in% roundCols) {
@@ -242,7 +252,7 @@ ggplot(m, aes(x = variable, y = value, fill = category)) +
   geom_col(position = 'fill', color = 'black') +
   geom_label(aes(y = label_y / n, label = value), vjust = .5,
              colour = "black", fill = 'white') +
-  scale_fill_manual(values = c('darkred', 'pink', 'lightblue', 'darkblue'),
+  scale_fill_manual(values = c('darkred', 'pink', 'lightblue', 'darkblue', 'white'),
                     labels = labels) +
   theme_linedraw() + labs(x = '', y = 'proportion') + 
   theme(legend.title = element_blank()) +
@@ -255,13 +265,20 @@ output$plotSummary <- renderPlot({
     return(NULL)
   }
   
-  labels <- labels <- c('FC > 1, P < 0.05', 'FC > 1, P >= 0.05', 'FC < 1, P >= 0.05', 'FC < 1, P > 0.05')
+  labels <- labels <- c('FC > 1, P < 0.05', 'FC > 1, P >= 0.05', 'FC < 1, P >= 0.05', 'FC < 1, P > 0.05', 'FC = 1')
+  if (input$measure == 'auc') {
+    labels <- labels <- c('AUC > 0.50, P < 0.05', 'AUC > 0.50, P >= 0.05', 'AUC < 0.50, P >= 0.05', 'AUC < 0.50, P > 0.05', 'AUC = 0.50')
+  }
+  
   title <- 'Summary of differential expression results'
   df <- sapply(REACTIVE_SEARCH$results_de, function(x) table(x$category)) %>% data.frame()
   df$category <- rownames(df)
   g1 <- generate_summary_plot(df, labels, title)
   
-  labels <- gsub('FC','HR', labels)
+  res <- REACTIVE_SEARCH$results_de
+  
+  labels <- gsub('FC|AUC','HR', labels)
+  
   title <- 'Summary of survival analysis'
   df <- sapply(REACTIVE_SEARCH$results_survival, function(x) table(x$category)) %>% data.frame()
   df$category <- rownames(df)

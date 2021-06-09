@@ -1,5 +1,6 @@
 library(shinyBS)
 library(shinydashboard)
+library(shinydashboardPlus)
 library(shinyjs)
 
 source("ui-about.R")
