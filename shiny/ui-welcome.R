@@ -22,7 +22,12 @@ userOptions <- list(
                         HTML(paste0('Survival endpoint (', 
                             '<a id = "what-endpoint">?</a>)')),
                         c('Best Available (DSS, OS, RFS)' = 'ba', 'DSS' = 'dss', 'OS' = 'os', 'RFS' = 'rfs'))
-                      )
+            ), column(3,
+                      selectInput('cutpoint',
+                        HTML(paste0('Survival cutpoint')),
+                        c('Median' = 'med', 'None (continuous expression)' = 'continuous'))
+                                    
+            )
     ),
     # hr(class = "blue-button", style="height: 2px"),
     
@@ -46,7 +51,7 @@ userSingleGene <- list(
   fluidRow(
     column(3, style="padding-right:0px",
            selectizeInput("geneInput", label = "Select a gene (begin typing for more)", 
-                          choices = sort(c("", "FPR1", "NKG2A", "CIITA", "TP53", "HRAS", "CD24", "FGFR3")))
+                          choices = sort(c("", "FPR1", "CIITA", "TP53", "HRAS", "CD24", "FGFR3")))
     ),
     column(2,style = "vertical-align:middle; padding-left:0px",
            HTML("<label class = 'control-label' style='visibility:hidden'>Hello</label>"),

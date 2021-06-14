@@ -67,11 +67,22 @@ resetResultsPage <- function() {
     
   updateTabsetPanel(inputId = 'page', selected = 'Results')
 
+  toggleSurvivalPlots(input$cutpoint)
+  
   shinyjs::runjs("$('#please-wait').addClass('hide');")
     
 }
 
-
+toggleSurvivalPlots <- function(cutpoint) {
+  f <- showTab
+  if (cutpoint == 'continuous') {
+    f <- hideTab
+  }
+  
+  f('plotsPage', 'Survival')
+  f('plotsPage', 'Survival (LG/NMI)')
+  f('plotsPage', 'Survival (HG/MI)')
+}
 
 # on multi gene search
 observeEvent(input$btnMultiGeneSearch,{

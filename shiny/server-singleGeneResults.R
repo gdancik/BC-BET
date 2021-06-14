@@ -95,19 +95,24 @@ getSingleGeneResults <- reactive({
   res2 <- lapply(res2, arrange, dataset)
   
   # get specified endpoint, for now we assume 'ba' 
-  get_endpoint <- function(x) {
+  get_endpoint <- function(x, endpt) {
     if (nrow(x) == 0) {
       return(x)
+    }
+    
+    if (endpt != 'ba') {
+      return(x %>% dplyr::filter(endpoint == endpt))
     }
     x  %>% arrange(endpoint) %>% group_by(dataset) %>% slice_head()
   }
   
   # if 'ba', then take first endpoint for each dataset (dss, os, rfs)
-  res2 <- lapply(res2, get_endpoint)
+
+  res2 <- lapply(res2, get_endpoint, endpt = input$endpoint)
   
   res2 <- lapply(res2, summarize_de, fc_col = 'hr_med', p_col = 'p_med', count = FALSE)
   
-  add_stats <- function(n, x, survival = FALSE) {
+  add_stats <- function(n, x, survival = NULL) {
     x <- x[[n]]
     if (nrow(x) == 0) {
       return(x)
@@ -122,8 +127,8 @@ getSingleGeneResults <- reactive({
     
     .after = 2
     
-    if (survival) {
-      return(tibble::add_column(x, n = stats$ba[m], .after = 3))
+    if (!is.null(survival)) {
+      return(tibble::add_column(x, n = stats[[survival]][m], .after = 3))
     }
 
     tibble::add_column(x, stats[m, columns, drop = FALSE], .after = 2)
@@ -135,7 +140,7 @@ getSingleGeneResults <- reactive({
     
   
   n <- names(res2)
-  res2 <- lapply(n, add_stats, x = res2, survival = TRUE)
+  res2 <- lapply(n, add_stats, x = res2, survival = input$endpoint)
   names(res2) <- n
   
   REACTIVE_SEARCH$results_de <- res1

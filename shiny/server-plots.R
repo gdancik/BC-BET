@@ -113,7 +113,7 @@ bcbet_boxplot <- function(df,ds, measure_name, measure, p, reverse = FALSE, uppe
   
 }
 
-bcbet_km <- function(df, ds, hr, p) {
+bcbet_km <- function(df, ds, hr, p, endpoint) {
   
   p <- round(p,3)
   if (p < 0.01) {
@@ -141,7 +141,8 @@ bcbet_km <- function(df, ds, hr, p) {
                     surv.col = col, cens.col = col,
                     size.est = 1) +
     ggplot2::coord_cartesian(ylim = c(0, 1)) + theme_classic() +
-    labs(x = 'Time (months)', ylab = 'Survival probability') + ggtitle(title)
+    labs(x = 'Time (months)', 
+         y = paste0('Survival (', endpoint, ') probability')) + ggtitle(title)
     
 }
 
@@ -213,6 +214,7 @@ generatePlots <- function(plotType, graphOutputId) {
       columns <- c('ba_time', 'ba_outcome')
       measure <- results$hr_med[i]
       p <- results$p_med[i]
+      endpoint <- results$endpoint[i]
     } else {
       measure <- results[[input$measure]][i]
       p <- results[[input$pvalue]][i]
@@ -238,7 +240,7 @@ generatePlots <- function(plotType, graphOutputId) {
     
     if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
       cat('  assigning plot to myplots')
-      myplots[[count]] <- bcbet_km(df, ds, measure, p)
+      myplots[[count]] <- bcbet_km(df, ds, measure, p, input$endpoint)
     } else {
       
       myplots[[count]] <- bcbet_boxplot(df, ds, input$measure, measure, p, upper = upper, reverse = reverse)
