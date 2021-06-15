@@ -76,10 +76,10 @@ getSingleGeneResults <- reactive({
                      paste0('"', cols, '":1', collapse = ', '),
               '}')
     m$find(qry, fields = fields)
-  }, qry = qry, cols = c(input$measure, input$pvalue), USE.NAMES = TRUE, simplify = FALSE)
+  }, qry = qry, cols = c(REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue), USE.NAMES = TRUE, simplify = FALSE)
   
   res1 <- lapply(res1, arrange, dataset)
-  res1 <- lapply(res1, summarize_de, fc_col = input$measure, p_col = input$pvalue, count = FALSE)
+  res1 <- lapply(res1, summarize_de, fc_col = REACTIVE_SEARCH$parameters$measure, p_col = REACTIVE_SEARCH$parameters$pvalue, count = FALSE)
   
   # get survival results
   types <- c('survival', 'survival_lg_nmi', 'survival_hg_mi')
@@ -108,7 +108,7 @@ getSingleGeneResults <- reactive({
   
   # if 'ba', then take first endpoint for each dataset (dss, os, rfs)
 
-  res2 <- lapply(res2, get_endpoint, endpt = input$endpoint)
+  res2 <- lapply(res2, get_endpoint, endpt = REACTIVE_SEARCH$parameters$endpoint)
   
   res2 <- lapply(res2, summarize_de, fc_col = 'hr_med', p_col = 'p_med', count = FALSE)
   
@@ -140,7 +140,7 @@ getSingleGeneResults <- reactive({
     
   
   n <- names(res2)
-  res2 <- lapply(n, add_stats, x = res2, survival = input$endpoint)
+  res2 <- lapply(n, add_stats, x = res2, survival = REACTIVE_SEARCH$parameters$endpoint)
   names(res2) <- n
   
   REACTIVE_SEARCH$results_de <- res1
@@ -273,7 +273,7 @@ output$plotSummary <- renderPlot({
   }
   
   labels <- labels <- c('FC > 1, P < 0.05', 'FC > 1, P >= 0.05', 'FC < 1, P >= 0.05', 'FC < 1, P > 0.05', 'FC = 1')
-  if (input$measure == 'auc') {
+  if (REACTIVE_SEARCH$parameters$measure == 'auc') {
     labels <- labels <- c('AUC > 0.50, P < 0.05', 'AUC > 0.50, P >= 0.05', 'AUC < 0.50, P >= 0.05', 'AUC < 0.50, P > 0.05', 'AUC = 0.50')
   }
   

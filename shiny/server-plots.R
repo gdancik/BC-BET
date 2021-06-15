@@ -162,7 +162,7 @@ generatePlots <- function(plotType, graphOutputId) {
   plot_prefix <- paste0('plot_', plotType)
   
   # may need to alter this for multi-gene input. 
-  gene <- input$geneInput
+  gene <- REACTIVE_SEARCH$gene
   
   # # get datasets (we may want to get this from mysql results)
   # m <- mongo_connect('mskcc_clinical')
@@ -216,8 +216,8 @@ generatePlots <- function(plotType, graphOutputId) {
       p <- results$p_med[i]
       endpoint <- results$endpoint[i]
     } else {
-      measure <- results[[input$measure]][i]
-      p <- results[[input$pvalue]][i]
+      measure <- results[[REACTIVE_SEARCH$parameters$measure]][i]
+      p <- results[[REACTIVE_SEARCH$parameters$pvalue]][i]
     }
     
     ds <- results$dataset[i]
@@ -240,10 +240,10 @@ generatePlots <- function(plotType, graphOutputId) {
     
     if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
       cat('  assigning plot to myplots')
-      myplots[[count]] <- bcbet_km(df, ds, measure, p, input$endpoint)
+      myplots[[count]] <- bcbet_km(df, ds, measure, p, REACTIVE_SEARCH$parameters$endpoint)
     } else {
       
-      myplots[[count]] <- bcbet_boxplot(df, ds, input$measure, measure, p, upper = upper, reverse = reverse)
+      myplots[[count]] <- bcbet_boxplot(df, ds, REACTIVE_SEARCH$parameters$measure, measure, p, upper = upper, reverse = reverse)
     }
     
     count <- count + 1
