@@ -6,30 +6,52 @@
 # Handle Single Gene Search
 ##########################################################
 
-# enaable/disable button on single gene input
-observeEvent(input$geneInput, {
+singleGeneSettings <- reactive({
+  list(geneInput = input$geneInput,
+       measure = input$measure,
+       pvalue = input$pvalue,
+       endpoint = input$endpoint,
+       cutpoint = input$cutpoint,
+       treated = input$treated)
+})
+
+# enable/disable btnGeneSearch when relevant inputs change
+observe({
   catn('\nobserveEvent geneInput...')
   
-  if (is.null(input$geneInput) | 
-      input$geneInput %in% c(NULL, GLOBAL$gene, "")) {
-    shinyjs::disable("btnGeneSearch")
-    return()
-  } else if (input$geneInput != '') {
-    shinyjs::enable("btnGeneSearch")
+  settings <- singleGeneSettings()
+  if (is.null(settings$geneInput) || identical(settings$geneInput, '')) {
+    shinyjs::disable('btnGeneSearch')
     return()
   }
-}, ignoreInit = TRUE)
+
+  # check geneInput, which does not reside in REACTIVE_SEARCH$parameters  
+  if (!identical(settings$geneInput, REACTIVE_SEARCH$gene)) {
+    shinyjs::enable('btnGeneSearch')
+    return()
+  }
+  
+  settings$geneInput <- NULL # we no longer want to consider this
+  
+  for (s in names(settings)) {
+    if (!identical(settings[[s]], REACTIVE_SEARCH$parameters[[s]])) {
+      shinyjs::enable('btnGeneSearch')
+      return()
+    }
+  }
+  shinyjs::disable("btnGeneSearch")
+})
 
 
 # click button for single gene search
 observeEvent(input$btnGeneSearch,{
   cat("\nclicked btnGeneSearch, geneInput = ", isolate(input$geneInput), "\n")
   
-  setGLOBAL('submitType', 'btn')
-  
   # do nothing if no valid gene is selected
   if (is.null(input$geneInput) | input$geneInput == "") return()
 
+  setGLOBAL('submitType', 'btn')
+  
   # clear multiGeneInput
   updateTextAreaInput(session, "multiGeneInput", value = "")
   shinyjs::disable('btnGeneSearch')
@@ -41,6 +63,10 @@ observeEvent(input$btnGeneSearch,{
 
 resetResultsPage <- function() {
   
+  for (ch in REACTIVE_SEARCH$parameters) {
+    REACTIVE_SEARCH$parameters[[ch]] <- NULL
+  }
+  
   #resetGLOBAL()
   #catn('inputs are: ', names(reactiveValuesToList(input)))
   
@@ -50,12 +76,16 @@ resetResultsPage <- function() {
   
   shinyjs::runjs("$('#please-wait').removeClass('hide');")
   
-
   if (is.null(REACTIVE_SEARCH$gene)) {
     insertTab('page', tabResults, "Home", position = "after")
   }
   
-  REACTIVE_SEARCH$gene = input$geneInput
+  REACTIVE_SEARCH$gene <- input$geneInput
+  REACTIVE_SEARCH$parameters <- list(measure = input$measure, 
+                                     pvalue = input$pvalue, 
+                                     endpoint = input$endpoint, 
+                                     cutpoint = input$cutpoint,
+                                     treated = input$treated)
   
   output$ResultsHeader <- renderUI({
     h4('Patient Analysis for', isolate(input$geneInput), style = 'margin:0px; color:darkred;')

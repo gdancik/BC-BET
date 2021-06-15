@@ -2,42 +2,56 @@
 userOptions <- list(
 
   fluidRow(style = 'margin-left:0px',
-  h4('Statistical parameters'),
+  h4('Statistical parameters',  
+     span(style = 'font-size:80%', '(', 
+          a('expand/hide', id = 'link_parameters', .noWS = 'outside'),
+      ')')
+  ),
   #accordion(id = 'accordionOptions',
   #          accordionItem(title = 'Statistical parameters', status = 'success', collapsed = FALSE,
-    fluidRow(
-      column(3,
+    fluidRow(id = 'div_parameters',
+      column(3, style = 'border-right: 1px solid black',
                     selectInput('measure', 
                         HTML(paste0('Class comparison measure (', 
                                     '<a id = "what-measure">?</a>)')),
                         c('FC' = 'fc', 'AUC' = 'auc'), 
-                        selected = 'auc')
-            ),column(3,
+                        selected = 'auc'),
+             
                     selectInput('pvalue',  
                         HTML(paste0('P-value for differential expression')),
                         c('Two-sample t-test' = 'pt', 'Wilcoxon Rank-Sum Test' = 'pw'),
                         selected = 'pw')
-            ), column(3,
+             
+            ),
+      
+      column(3,
                       selectInput('endpoint', 
                         HTML(paste0('Survival endpoint (', 
                             '<a id = "what-endpoint">?</a>)')),
-                        c('Best Available (DSS, OS, RFS)' = 'ba', 'DSS' = 'dss', 'OS' = 'os', 'RFS' = 'rfs'))
-            ), column(3,
+                        c('Best Available (DSS, OS, RFS)' = 'ba', 'DSS' = 'dss', 'OS' = 'os', 'RFS' = 'rfs')),
+      
                       selectInput('cutpoint',
                         HTML(paste0('Survival cutpoint')),
                         c('Median' = 'med', 'None (continuous expression)' = 'continuous'))
-                                    
+      ), column(5,
+                      selectInput('treated',
+                        HTML(paste0('Survival analysis includes treated patients (',
+                              '<a id = "what-treated">?</a>)')),
+                        c('Yes' = 'yes', 'No' = 'no')
+                      )
             )
     ),
     # hr(class = "blue-button", style="height: 2px"),
     
     bsTooltip('what-measure', placement = 'right',
               'Select FC for fold change or AUC for area under the receiver operating characteristics curve'),
-    
+
     bsTooltip('what-endpoint', placement = 'right',
               'DSS = disease-specific survival; OS = overall survival; RFS = recurrence-free survival; Best Available selects the first available endpoint in the list: DSS, OS, RFS'
-              )
-    
+              ),
+    bsTooltip('what-treated', placement = 'right',
+            "CNUH and DFCI include patients treated with BCG or adjuvant chemotherapy, though these treatments are not associated with good outcomes in these cohorts. Select Yes to include these patients, or No to remove them."
+    )
   #))
   )
 )

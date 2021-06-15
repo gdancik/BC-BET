@@ -17,7 +17,8 @@ shinyServer(function(input, output, session) {
   
   REACTIVE_SEARCH <- reactiveValues(gene = NULL, 
                                     results_de = NULL,
-                                    results_survival = NULL)
+                                    results_survival = NULL,
+                                    parameters = NULL)
   
   shinyjs::disable('btnGeneSearch')
   shinyjs::runjs("$('#please-wait').addClass('hide');")
@@ -29,6 +30,12 @@ shinyServer(function(input, output, session) {
                       mode = 'push')
   }
   
+  
+
+  observe({
+    shinyjs::onclick('link_parameters', shinyjs::toggle('div_parameters'))
+  })  
+
 })
 
 
