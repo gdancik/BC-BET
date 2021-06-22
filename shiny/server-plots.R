@@ -306,27 +306,27 @@ survivalPlotsHGMI <- reactive({
 
 observeEvent(list(input$resultsPage, input$plotsPage), {
   
-  if (input$resultsPage != "Plots") {
-    return()
-  }
-  
+  # if (input$resultsPage != "Plots") {
+  #   return()
+  # }
+  # 
   
   catn('generating plots for: ', input$plotsPage)
   
-  if (input$plotsPage == 'Tumor') {
+  if (input$resultsPage == 'Tumor') {
     tumorPlots()
     return()
-  } else if (input$plotsPage == 'Grade') {
+  } else if (input$resultsPage == 'Grade') {
     gradePlots()
     return()
-  } else if (input$plotsPage == 'Stage') {
+  } else if (input$resultsPage == 'Stage') {
     stagePlots()
     return()
-  } else if (input$plotsPage == 'Survival') {
+  } else if (input$resultsPage == 'Survival') {
     survivalPlots()
-  } else if (input$plotsPage == 'Survival (LG/NMI)') {
+  } else if (input$resultsPage == 'Survival (LG/NMI)') {
     survivalPlotsLGNMI()
-  } else if (input$plotsPage == 'Survival (HG/MI)') {
+  } else if (input$resultsPage == 'Survival (HG/MI)') {
     survivalPlotsHGMI()
   }
   

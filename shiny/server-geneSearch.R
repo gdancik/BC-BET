@@ -88,7 +88,14 @@ resetResultsPage <- function() {
                                      treated = input$treated)
   
   output$ResultsHeader <- renderUI({
-    h4('Patient Analysis for', isolate(input$geneInput), style = 'margin:0px; color:darkred;')
+    
+    l <- REACTIVE_SEARCH$parameters
+    
+    h4('Patient Analysis for', REACTIVE_SEARCH$gene, 
+       span('(', 
+            paste0(names(l), ': ', l, collapse = ', '), 
+            ')', style = 'font-size: 80%'),
+       style = 'margin:0px; color:darkred;')
   })
   
   getSingleGeneResults()
@@ -109,9 +116,9 @@ toggleSurvivalPlots <- function(cutpoint) {
     f <- hideTab
   }
   
-  f('plotsPage', 'Survival')
-  f('plotsPage', 'Survival (LG/NMI)')
-  f('plotsPage', 'Survival (HG/MI)')
+  f('resultsPage', 'Survival')
+  f('resultsPage', 'Survival (LG/NMI)')
+  f('resultsPage', 'Survival (HG/MI)')
 }
 
 # on multi gene search

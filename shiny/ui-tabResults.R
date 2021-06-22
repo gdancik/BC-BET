@@ -27,13 +27,13 @@ tabSummary <- tabPanel('Summary',
 )
 
 # template displaying one graph currently
-tabPlots <- tabPanel('Plots',
-        tabsetPanel(id = 'plotsPage', type = 'pills',
-            tabPanel('Tumor', h4('Comparison of tumor and normal samples', class = 'plotHeader'),
+tabPlots <- navbarMenu('Plots',
+        # tabsetPanel(id = 'plotsPage', type = 'pills',
+            tabPanel('Tumor', id = 'plotsTumor', h4('Comparison of tumor and normal samples', class = 'plotHeader'),
                                 uiOutput('graphOutputTumor')),
-            tabPanel('Grade', h4('Comparison of high grade (HG) and low grade (LG) tumor samples', class = 'plotHeader'),
+            tabPanel('Grade', id = 'plotsGrade', h4('Comparison of high grade (HG) and low grade (LG) tumor samples', class = 'plotHeader'),
                                 uiOutput('graphOutputGrade')),
-            tabPanel('Stage', h4('Comparison of muscle invasive (MI) and non-muscle invasive (NMI) tumor samples', class = 'plotHeader'),
+            tabPanel('Stage', id = 'plotsStage', h4('Comparison of muscle invasive (MI) and non-muscle invasive (NMI) tumor samples', class = 'plotHeader'),
                                 uiOutput('graphOutputStage')),
             tabPanel('Survival', h4('Kaplan Meier curves comparing high and low expressors', class = 'plotHeader'),
                                 uiOutput('graphOutputSurvival')),
@@ -41,7 +41,7 @@ tabPlots <- tabPanel('Plots',
                      uiOutput('graphOutputSurvivalLGNMI')),
             tabPanel('Survival (HG/MI)', h4('Kaplan Meier curves comparing high and low expressors in patients with high grade, muscle-invasive tumors', class = 'plotHeader'),
                      uiOutput('graphOutputSurvivalHGMI'))
-        )
+        #)
 )                        
 
 tabDownload <- tabPanel('Download',
