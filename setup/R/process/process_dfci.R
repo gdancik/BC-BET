@@ -69,15 +69,23 @@ for (col in paste0('characteristics_ch1.', 17:20)) {
   
 }
 
-
 myoutcome <- rep(NA, length(outcome))
 myoutcome[outcome%in%"recurrence/dod: No"] <- 0
 myoutcome[outcome%in%"recurrence/dod: Yes"] <- 1
 mytime <- as.double(gsub('recurrence free survival months (distant and local): ', '', time, fixed = TRUE))
 
+
+omit <- GSE31684.p$characteristics_ch1.14 == 'prerc_chemo: Yes'
+
+mytime[omit] <- NA
+myoutcome[omit] <- NA
+
+treated <- GSE31684.p$characteristics_ch1.15 == 'post rc_chemo: Yes'
+
 # create clinical data table
 dfci_clinical <- create_clinical_table(id = rownames(GSE31684.p), grade = dfci.grade, 
                                        stage = dfci.stage, 
+                                       treated = treated,
                                        rfs_time = mytime,
                                        rfs_outcome = myoutcome)
 
