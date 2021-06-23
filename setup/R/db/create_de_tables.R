@@ -215,70 +215,74 @@ for (ds in datasets) {
   
   for (survival_table in c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
 
-    ba_added <- FALSE
     for (v in survival_variables) {
-      if (replace_or_skip(con, args$replace, ds, survival_table, v) == 'skip') {
-        next
-      }
-
-      # skip HG_MI_COHORTS if we are looking at survival or lg_nmi
-      if (ds %in% HG_MI_COHORTS && survival_table %in% c('survival', 'survival_lg_nmi')) {
-        next
-      }
       
-      vs <- survival_columns(v)
-      if (is.null(Y[[vs$times]])) {
-        next
-      }
-      
-      cat('  survival analysis for ', ds, ':', v, ':', survival_table, '\n')
-
-      if (survival_table == 'survival') {      
-        keep <- 1:nrow(Y)
-      } else if (survival_table == 'survival_lg_nmi') {
-        keep <- Y$grade == 'lg' & Y$stage == 'nmi'
-      } else if (survival_table == 'survival_hg_mi') {
-        if (ds %in% HG_MI_COHORTS) {
-          keep <- 1:nrow(Y)
-        } else {
-          keep <- Y$grade == 'hg' & Y$stage == 'mi'
+      for (treated in 1:2) {
+        myds <- ds
+        
+        if (treated == 2) {
+          if (is.null(Y$treated)) {
+            next
+          }
+          myds <- paste0(myds, '_no_treated')
         }
-      } else {
-        stop('invalid survival_table: ', survival_table)
+        
+        if (replace_or_skip(con, args$replace, myds, survival_table, v) == 'skip') {
+          next
+        }
+        
+        # skip HG_MI_COHORTS if we are looking at survival or lg_nmi
+        if (ds %in% HG_MI_COHORTS &&
+            survival_table %in% c('survival', 'survival_lg_nmi')) {
+          next
+        }
+        
+        vs <- survival_columns(v)
+        if (is.null(Y[[vs$times]])) {
+          next
+        }
+        
+        cat('  survival analysis for ',myds,':',v,':',survival_table,'\n')
+        
+        if (survival_table == 'survival') {
+          keep <- 1:nrow(Y)
+        } else if (survival_table == 'survival_lg_nmi') {
+          keep <- Y$grade == 'lg' & Y$stage == 'nmi'
+        } else if (survival_table == 'survival_hg_mi') {
+          if (ds %in% HG_MI_COHORTS) {
+            keep <- 1:nrow(Y)
+          } else {
+            keep <- Y$grade == 'hg' & Y$stage == 'mi'
+          }
+        } else {
+          stop('invalid survival_table: ', survival_table)
+        }
+        
+        if (treated == 2) {
+          keep <- keep & Y$treated
+        }
+        
+        t <- table(Y[[vs$outcome]][keep])
+        
+        # currently skip if n < 10 or more than 90% of patients are censured
+        if (sum(t) < 10 || proportions(t)['0'] > 0.90) {
+          cat('  insufficient samples for ',myds,' (',survival_table,') -- skipping\n')
+          next
+        }
+        
+        res <-coxph_test(X[, keep], Y[[vs$times]][keep], Y[[vs$outcomes]][keep])
+        gene <- row.names(res)
+        res.df <- data.frame(gene, dataset = myds, endpoint = v, res)
+        rownames(res.df) <- NULL
+        cat('  adding results to mongo ...\n')
+        m <- mongo_connect(survival_table)
+        m$insert(data.frame(res.df))
+        m$disconnect(gc = FALSE)
       }
-      
-      t <- table(Y[[vs$outcome]][keep])
-      
-      # currently skip if n < 10 or more than 90% of patients are censured
-      if (sum(t) < 10 || proportions(t)['0']>0.90) {
-        cat('  insufficient samples for ', ds, ' (', survival_table, ') -- skipping\n')
-        next
-      }
-
-      res <- coxph_test(X[,keep], Y[[vs$times]][keep], Y[[vs$outcomes]][keep])
-      gene <- row.names(res)
-      res.df <- data.frame(gene, dataset = ds, endpoint = v, res)
-      rownames(res.df) <- NULL
-      cat('  adding results to mongo ...\n')
-      m <- mongo_connect(survival_table)
-      m$insert(data.frame(res.df))
-      m$disconnect(gc = FALSE)
-      
-      # if (!ba_added) {
-      #   res.df <- data.frame(gene, dataset = ds, endpoint = 'ba', res)
-      #   rownames(res.df) <- NULL
-      #   cat('  adding ba results to mongo ...\n')
-      #   m <- mongo_connect(survival_table)
-      #   m$insert(data.frame(res.df))
-      #   m$disconnect(gc = FALSE)
-      #   ba_added <- TRUE
-      # }
-      
     }
-    
     cat('\n')
   }
-
+  
 }
 
 # add mongo indices

@@ -125,15 +125,32 @@ mongo_connect <- function(collection, user = "root", pass = "password",
 
 add_survival <- function(ds, Y, collection, subset = NULL) {
   
-  s <- sapply(c('dss', 'os', 'rfs', 'ba'), get_survival_n, Y = Y, subset = subset)
-  s <- unlist(s)
-  if (!is.null(s)) {
-    df <- data.frame(dataset = ds, t(s))
-    m <- mongo_connect(collection)
-    qry <- paste0('{"dataset":"',ds, '"}')
-    m$remove(qry)
-    m$insert(df)
+  # do this twice, second time, filter Y and change ds name for no_treated
+  for (i in 1:2) {
+  
+    if (i == 2) {
+      if (is.null(Y$treated)) {
+        next
+      }
+      
+      Y <- dplyr::filter(Y, treated == 0)
+      ds <- paste0(ds, '_no_treated')
+    }
+    
+    s <- sapply(c('dss', 'os', 'rfs', 'ba'), get_survival_n, Y = Y, subset = subset)
+    s <- unlist(s)
+    if (!is.null(s)) {
+      df <- data.frame(dataset = ds, t(s))
+      m <- mongo_connect(collection)
+      qry <- paste0('{"dataset":"',ds, '"}')
+      m$remove(qry)
+      m$insert(df)
+    }
+    
+    
   }
+  
+  
 }
 
 # calculate number of samples for survival analysis
