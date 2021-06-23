@@ -36,7 +36,7 @@ stage <- rep(NA, length(grade))
 stage[grep("^a$|1", GSE13507.stage.T)] <- "nmi"
 stage[grep("[2-4]", GSE13507.stage.T)] <- "mi"
 
-treated = GSE13507.chemo%in%1 | GSE13507.intravesical %in% 1
+treated = as.integer(GSE13507.chemo%in%1 | GSE13507.intravesical %in% 1)
 
 cnuh_clinical <- create_clinical_table(id = rownames(GSE13507.p),
                       tumor = tumor, grade = grade,

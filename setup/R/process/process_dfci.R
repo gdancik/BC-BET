@@ -15,7 +15,7 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # load expression and platform data
 
-dfci <- getGEO('GSE31684')
+dfci <- getGEO('GSE31684', getGPL = PROCESS_EXPRESSION)
 #View(dfci)
 
 if (PROCESS_EXPRESSION) {
@@ -80,7 +80,7 @@ omit <- GSE31684.p$characteristics_ch1.14 == 'prerc_chemo: Yes'
 mytime[omit] <- NA
 myoutcome[omit] <- NA
 
-treated <- GSE31684.p$characteristics_ch1.15 == 'post rc_chemo: Yes'
+treated <- as.integer(GSE31684.p$characteristics_ch1.15 == 'post rc_chemo: Yes')
 
 # create clinical data table
 dfci_clinical <- create_clinical_table(id = rownames(GSE31684.p), grade = dfci.grade, 
