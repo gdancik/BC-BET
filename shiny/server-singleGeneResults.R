@@ -87,10 +87,25 @@ getSingleGeneResults <- reactive({
   # specify endpoint -- for 'ba', do not change query
   # qry <- paste0('{"gene":"', gene, '", "endpoint":"dss"}')
   
-  res2 <- sapply(types, function(x, qry) {
+  cutpoint <- REACTIVE_SEARCH$parameters$cutpoint
+  
+  # m$find(' {"dataset": "dfci",  "treated": {"$ne": "include"}}  ')
+  
+  if (REACTIVE_SEARCH$parameters$treated == 'yes') {
+    treated_qry <- '"treated": {"$ne": "remove"}'
+  } else {
+    treated_qry <- '"treated": {"$ne": "include"}'
+  }
+  
+  res2 <- sapply(types, function(x, qry, cutpoint, treated_qry) {
     m <- mongo_connect(x)
-    m$find(qry, fields = '{"_id":0, "gene":1, "dataset":1, "endpoint":1, "hr_med":1, "p_med":1}')
-  }, qry = qry, USE.NAMES = TRUE, simplify = FALSE)
+    qry <- gsub("}", paste0(',', treated_qry, "}"), qry)
+    fields = paste0('{"_id":0, "gene":1, "dataset":1, "endpoint":1,',
+        paste0( c('\"hr_', '\"p_'), cutpoint, '\":1', collapse = ', '),
+    '}')
+    
+    m$find(qry, fields = fields)
+  }, qry = qry, cutpoint = cutpoint, treated_qry = treated_qry, USE.NAMES = TRUE, simplify = FALSE)
   
   res2 <- lapply(res2, arrange, dataset)
   
@@ -110,16 +125,26 @@ getSingleGeneResults <- reactive({
 
   res2 <- lapply(res2, get_endpoint, endpt = REACTIVE_SEARCH$parameters$endpoint)
   
-  res2 <- lapply(res2, summarize_de, fc_col = 'hr_med', p_col = 'p_med', count = FALSE)
+  res2 <- lapply(res2, summarize_de, 
+                 fc_col = paste0('hr_', cutpoint), 
+                 p_col = paste0('p_', cutpoint),
+                 count = FALSE)
   
-  add_stats <- function(n, x, survival = NULL) {
+  add_stats <- function(n, x, survival = NULL, treated_qry = NULL) {
     x <- x[[n]]
     if (nrow(x) == 0) {
       return(x)
     }
     
     m <- mongo_connect(paste0('stats_', n))
-    stats <- m$find()
+
+    
+    if (is.null(treated_qry)) {
+      stats <- m$find()  
+    } else {
+      stats <- m$find(query = paste0('{',treated_qry, '}'))
+    }
+    
     m <- match(x$dataset, stats$dataset)
     
     columns <- 3:2
@@ -134,13 +159,15 @@ getSingleGeneResults <- reactive({
     tibble::add_column(x, stats[m, columns, drop = FALSE], .after = 2)
   }
   
+  # add stats for tumor, grade, stage
   n <- names(res1)
   res1 <- lapply(n, add_stats, x = res1)
   names(res1) <- n
     
-  
+  # add stats for survival
   n <- names(res2)
-  res2 <- lapply(n, add_stats, x = res2, survival = REACTIVE_SEARCH$parameters$endpoint)
+  res2 <- lapply(n, add_stats, x = res2, survival = REACTIVE_SEARCH$parameters$endpoint,
+                 treated_qry = treated_qry)
   names(res2) <- n
   
   REACTIVE_SEARCH$results_de <- res1
@@ -156,7 +183,9 @@ bcbet_column_names <- function() {
            'P-value' = 'pt', 
            'P-value' = 'p_med', 
            'P-value' = 'pw',
+           'P-value' = 'p_continuous',
            'HR' = 'hr_med',
+           'HR' = 'hr_continuous',
            'Endpoint' = 'endpoint', 
            'N' = 'n', 
            'N_tumor' = 'N_tumor', 'N_normal' = 'N_normal',
