@@ -217,17 +217,17 @@ for (ds in datasets) {
 
     for (v in survival_variables) {
       
-      for (treated in 1:2) {
+      for (treated in c('include', 'remove')) {
         myds <- ds
         
-        if (treated == 2) {
+        if (treated == 'remove') {
           if (is.null(Y$treated)) {
             next
           }
-          myds <- paste0(myds, '_no_treated')
+         # myds <- paste0(myds, '_no_treated')
         }
         
-        if (replace_or_skip(con, args$replace, myds, survival_table, v) == 'skip') {
+        if (treated == 'include' && replace_or_skip(con, args$replace, myds, survival_table, v) == 'skip') {
           next
         }
         
@@ -258,7 +258,7 @@ for (ds in datasets) {
           stop('invalid survival_table: ', survival_table)
         }
         
-        if (treated == 2) {
+        if (treated == 'remove') {
           keep <- keep & Y$treated
         }
         
@@ -272,8 +272,14 @@ for (ds in datasets) {
         
         res <-coxph_test(X[, keep], Y[[vs$times]][keep], Y[[vs$outcomes]][keep])
         gene <- row.names(res)
-        res.df <- data.frame(gene, dataset = myds, endpoint = v, res)
+        
+        if (!is.null(Y$treated)) {
+          res.df <- data.frame(gene, dataset = myds, treated = treated, endpoint = v, res)
+        } else {
+          res.df <- data.frame(gene, dataset = myds, endpoint = v, res)
+        }
         rownames(res.df) <- NULL
+      
         cat('  adding results to mongo ...\n')
         m <- mongo_connect(survival_table)
         m$insert(data.frame(res.df))
