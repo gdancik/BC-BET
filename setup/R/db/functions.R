@@ -259,3 +259,34 @@ addMongoData <- function(ds, D = NULL) {
   m$disconnect(gc = FALSE)
   
 }
+
+mongo_add_genes <- function() {
+  
+  m <- mongo_connect('stage')
+  cols <- m$run('{"listCollections":1, "nameOnly":"true"}')
+  
+  if (length(names(cols$cursor)) != 3) {
+    stop('check mongo_add_genes -- do we have multiple batches?')
+  }
+  
+  res <- cols$cursor$firstBatch
+  res <- res %>% dplyr::filter(grepl('expr',name))
+  
+  ALL.GENES <- vector(mode = 'list', length = nrow(res))
+  
+  for (i in 1:nrow(res)) {
+    ds <- res$name[i]
+    m <- mongo_connect(ds)
+    ALL.GENES[[i]] <- m$find(fields = '{"_id":0, "gene":1}')
+  }
+  
+  genes <- do.call('rbind', ALL.GENES)
+  hgnc_genes <- readRDS('../../data/genes/genes.rda')
+  
+  final_genes <- unique(genes$gene) %>% intersect(hgnc_genes)
+  
+  m <- mongo_connect('genes')
+  m$drop()
+  m$insert(data.frame(genes = sort(final_genes)))
+  m$disconnect(gc = FALSE)
+}

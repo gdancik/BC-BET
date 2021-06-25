@@ -303,3 +303,8 @@ for (v in collections) {
     m$index('{"gene": 1}')
   }
 }
+
+
+if (args$expression == 'yes') {
+  mongo_add_genes()
+}
