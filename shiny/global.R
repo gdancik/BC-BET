@@ -1,3 +1,10 @@
+source('mongo.R')
+
+VALID_GENES <- NULL
+m <- mongo_connect('genes')
+VALID_GENES <- m$find()$genes
+rm(m)
+
 # global variables and functions
 GLOBAL <- list(#gene = NULL, geneResults = NULL,
                submitType = 'qry', 

@@ -31,6 +31,9 @@ shinyServer(function(input, output, session) {
   }
   
   
+  updateSelectizeInput(session, 'geneInput', choices = VALID_GENES, 
+                       selected = 'FGFR3', server = TRUE) 
+  
 
   observe({
     shinyjs::onclick('link_parameters', shinyjs::toggle('div_parameters'))
