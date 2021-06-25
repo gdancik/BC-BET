@@ -11,7 +11,10 @@ source('mongo.R')
 
 # returns a data frame combining expression with 
 # clinical data specified by 'clin_column', e.g., 'stage'.
-get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
+#   - plotType only used for 'survival_lg_nmi' or 'survival_hg_mi'
+#   - if treated is 'no', we filter df to remove treated
+
+get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL, treated = NULL) {
   
   HG_MI_COHORTS <- c('mda1', 'mda2')
   
@@ -24,6 +27,7 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
   m <- mongo_connect(paste0(ds, '_clinical'))
   y <- m$find()
   
+  # if no clin_column is specified, return all data
   if (is.null(clin_column)) {
     
     if (!is.null(plotType)) {
@@ -62,6 +66,11 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
     df <- data.frame(x = x$expr[[1]],
                      y1 = y[,clin_column[1]],
                      y2 = y[,clin_column[2]])
+    
+    if (!is.null(y$treated) && treated == 'no') {
+      df <- df[y$treated == 0,]
+    }
+    
   }
 
   if (!is.null(keep)) {
@@ -124,8 +133,7 @@ bcbet_km <- function(df, ds, hr, p, endpoint) {
   
   hr <- paste0('HR = ', round(hr, 2))
   title <- paste0(ds, '\n', hr, ' (', p, ')')
-  
-  
+
   cut = median(df$x)
   upper = "upper 50%"; lower = "lower 50%"
   
@@ -182,8 +190,10 @@ generatePlots <- function(plotType, graphOutputId) {
   
   if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
     results <- REACTIVE_SEARCH$results_survival[[plotType]]
+    treated <- REACTIVE_SEARCH$parameters$treated
   } else {
     results <- REACTIVE_SEARCH$results_de[[plotType]]
+    treated <- NULL
   }
   
   if (nrow(results) == 0) {
@@ -211,7 +221,9 @@ generatePlots <- function(plotType, graphOutputId) {
     
     columns <- plotType
     if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
-      columns <- c('ba_time', 'ba_outcome')
+      columns <- paste0(REACTIVE_SEARCH$parameters$endpoint, c('_time', '_outcome'))
+      columns <- c(columns, 'treated')
+      
       measure <- results$hr_med[i]
       p <- results$p_med[i]
       endpoint <- results$endpoint[i]
@@ -224,8 +236,7 @@ generatePlots <- function(plotType, graphOutputId) {
     
 
     cat("getting data for: ", ds, "...\n")
-    df <- get_mongo_df(ds, qry, columns, plotType)
-    
+    df <- get_mongo_df(ds, qry, columns, plotType, treated = treated)
     
     if (is.null(df) || nrow(df) == 0) {
       catn('skipping ', df, ' ...')
