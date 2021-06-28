@@ -340,7 +340,35 @@ write_sheet <- function(sheet, RES, filename) {
            row.names = FALSE, append = TRUE)
 }
 
+write_header_sheet <- function(filename, params) {
+  
+  p <- paste0(names(params), ': ', params)
+  p <- paste0('- ', p, sep = '')
+  p <- c('Statistical parameters:\n', p)
+              
+  header <- c("- TUMOR: FC > 1 means that expression is higher in tumors compared to normal samples",
+  "- GRADE: FC > 1 means that expression is higher in high grade (hg) tumors compared to low grade (lg) tumors",
+  "- STAGE: FC > 1 means that expression is higher in muscle invasive (mi) tumors compared to non-muscle invasive (nmi) tumors",
+  "- SURVIVAL: HR > 1 means that high expression is associated with poor prognosis"
+  ) 
+  
+  header <- c('Description:\n',header)
+  header <- c(p, '',header)
+  
+  header <- gsub('pw', 'pw (p-values calculated using Wilcoxon test)',  header)
+  header <- gsub('pt', 'pt (p-values calculated using t-test)',  header)
+  
+  header <- gsub('treated: yes', 'treated: yes (include patients treated with BCG/adjuvant chemo in survival analysis',  header)
+  header <- gsub('treated: no', 'treated: no (remove patients treated with BCG/adjuvant chemo from survival analysis',  header)
+  
+  
+  write.xlsx(header, sheetName = 'Settings', file = filename,
+             row.names = FALSE, append = TRUE, col.names = FALSE)
+  
+}
+
 write_all_results <- function(filename) {
+  write_header_sheet(filename, REACTIVE_SEARCH$parameters)
   res1 <- isolate(REACTIVE_SEARCH$results_de)
   res2 <- isolate(REACTIVE_SEARCH$results_survival)
   sapply(names(res1), write_sheet, RES = res1, filename = filename)
