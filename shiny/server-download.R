@@ -1,11 +1,30 @@
 
+get_datasets_from_results <- function() {
+  
+  gd <- function(x) {
+    if (is.null(x) || nrow(x) == 0) {
+      return(NULL)
+    }
+    unique(x$dataset)
+  }
+  
+
+  ds1 <- lapply(REACTIVE_SEARCH$results_de, gd)
+  ds2 <- lapply(REACTIVE_SEARCH$results_survival, gd)
+  ds <- unique(c(do.call('c',ds1), do.call('c', ds2)))
+  
+  sort(ds)
+  
+}
+
 
 output$downloadPage <- renderUI({
   
   showNotification('To do: need to get relevant datasets', 
                    type = "warning") 
-                   
-  datasets <- c('mskcc', 'cnuh')
+
+  
+  datasets <- get_datasets_from_results()
   
   cat('\n\ndownloadPage!!!\n\n')
   
@@ -19,6 +38,10 @@ output$downloadPage <- renderUI({
                 '</ul>',collapse = '\n')
   
   HTML('<div style = "font-size:110%">', 
+       
+       '<h4 style = "color:darkred;"> Download results (differential expression and survival)</h4>',
+       '<ul><li> Results (', paste0(downloadLink('download_results', 'xlsx')), ')</li></ul><hr>\n',
+       
        '<h4 style = "color:darkred;"> Download expression and clinical data from all cohorts</h4>',
        '<ul><li> All files (', paste0(downloadLink('download_all', 'zip')), ')</li></ul>\n',
        #'</br>',
@@ -27,30 +50,38 @@ output$downloadPage <- renderUI({
 
 })
 
+
+write_dataset <- function(x, file) {
+  qry <- paste0('{"gene": "', REACTIVE_SEARCH$gene, '"}')
+  df <- get_mongo_df(x, qry)
+  write.csv(df, file, row.names = FALSE)
+}
+
 observe({
 
-  datasets <- c('mskcc', 'cnuh')
+  datasets <- get_datasets_from_results()
   
   createDownloadHandler <- function(x) {
     
     output[[paste0('download_',x)]] <- downloadHandler(
         filename = function() {
-            paste(x, ".csv", sep = "")
+            paste('bcbet_', x, ".csv", sep = "")
         },
         content = function(file) {
             cat('writing file...\n')
           
-            qry <- paste0('{"gene": "', input$geneInput, '"}')
-          
-            df <- get_mongo_df(x, qry)
-            write.csv(df, file, row.names = FALSE)
+            # qry <- paste0('{"gene": "', REACTIVE_SEARCH$geneInput, '"}')
+            # 
+            # df <- get_mongo_df(x, qry)
+            # write.csv(df, file, row.names = FALSE)
+            # 
+            write_dataset(x,file)
         }
     )
   }
   
   lapply(datasets, createDownloadHandler)
   
-
   all_file_name <- paste0('bcbet_', input$geneInput, '.zip')
   
   output$download_all <- downloadHandler(
@@ -69,9 +100,15 @@ observe({
       }
 
       wd <- setwd(tmpDir)
-                    
-      write.csv(iris, file = 'iris.csv')
-      write.csv(iris, file = 'iris2.csv')
+      
+      datasets <- get_datasets_from_results()
+      
+      for (ds in datasets) {
+        write_dataset(ds, paste0('bcbet_', ds, '.csv'))  
+      }
+      
+      # write.csv(iris, file = 'iris.csv')
+      # write.csv(iris, file = 'iris2.csv')
       
       setwd('../')
       zip(zipfile = file,files = bcbet_dir)
@@ -81,25 +118,25 @@ observe({
 })
   
 
-write_datasets <- function(ds, gene) {
-  
-  # check this -- not used currently
-  
-  tmpDir <- tempdir()
-  
-  tmpdirfiles <- Sys.glob(paste0(tmpDir,'/*.csv'))
-  file.remove(Sys.glob(tmpdirfiles))
-  qry <- paste0('{"gene": "', gene, '"}')
-  
-  for (ds1 in ds) {
-    filename = paste(ds1, ".csv", sep = "")
-    df <- get_mongo_df(ds1, qry)
-    write.csv(df, paste0(tmpDir,'/',filename), row.names = FALSE)
-    
-  }
-  
-  zip( paste0('bcbet_', gene, '.zip'), tmpdirfiles)
-  
-}
-
-
+# write_datasets <- function(ds, gene) {
+#   
+#   # check this -- not used currently
+#   
+#   tmpDir <- tempdir()
+#   
+#   tmpdirfiles <- Sys.glob(paste0(tmpDir,'/*.csv'))
+#   file.remove(Sys.glob(tmpdirfiles))
+#   qry <- paste0('{"gene": "', gene, '"}')
+#   
+#   for (ds1 in ds) {
+#     filename = paste(ds1, ".csv", sep = "")
+#     df <- get_mongo_df(ds1, qry)
+#     write.csv(df, paste0(tmpDir,'/',filename), row.names = FALSE)
+#     
+#   }
+#   
+#   zip( paste0('bcbet_', gene, '.zip'), tmpdirfiles)
+#   
+# }
+# 
+# 

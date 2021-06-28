@@ -375,9 +375,7 @@ write_all_results <- function(filename) {
   sapply(names(res2), write_sheet, RES = res2, filename = filename)
 } 
 
-# Not run: ------------------------------------
-# In server.R:
-output$downloadAllResults <- downloadHandler(
+resultsDownloadHandler <- downloadHandler(
   filename = function() {
     paste('bcbet_', REACTIVE_SEARCH$gene, '.xlsx', sep='')
   },
@@ -386,5 +384,8 @@ output$downloadAllResults <- downloadHandler(
     #write.csv(data, con)
   }
 )
+
+output$downloadAllResults <- resultsDownloadHandler
+output$download_results <- resultsDownloadHandler
 
 
