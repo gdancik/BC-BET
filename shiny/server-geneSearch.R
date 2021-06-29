@@ -103,6 +103,7 @@ resetResultsPage <- function() {
   #showTab('page', 'Results')
     
   updateTabsetPanel(inputId = 'page', selected = 'Results')
+  updateTabsetPanel(inputId = 'resultsPage', selected = 'Summary')
 
   toggleSurvivalPlots(input$cutpoint)
   

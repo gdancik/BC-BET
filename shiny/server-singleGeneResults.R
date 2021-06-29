@@ -205,18 +205,28 @@ render_de_table <- function(x, gene, var_type) {
   colnames <- bcbet_column_names()
   colnames <- colnames[colnames%in% colnames(x)]
   
-  roundCols <- c('FC', 'AUC', 'HR', 'P-value')
-  roundCols <- roundCols[roundCols %in% names(colnames)]
-  
   hideCol <- 6
-  # if ('HR' %in% roundCols) {
-  #   hideCol <- 5
-  # }
-  # 
   print(x)
+  
+
+  # Note: let's round here because if formatRound is used, the NAs are replaced
+  # with blanks
+  
+  #roundCols <- c('FC', 'AUC', 'HR', 'P-value')
+  #roundCols <- roundCols[roundCols %in% names(colnames)]
+
+  # round to 2 digits
+  r1 <- intersect(c('fc', 'auc', 'hr_continuous', 'hr_med'), colnames(x))
+  x[,r1] <- round(x[,r1],2)
+  
+  # round to 3 digits
+  r2 <- intersect(c('pw', 'pt', 'p_continuous', 'p_med'), colnames(x))
+  x[,r2] <- round(x[,r2],3)
   
   # catn('display iris now...\n')
   # return(renderDataTable(DT::datatable(iris)))
+  
+  x[is.na(x)] <- 'N/A'
   
   DT::renderDataTable({
     
@@ -224,7 +234,8 @@ render_de_table <- function(x, gene, var_type) {
                   extensions = 'Buttons',
                   options = list(paging = FALSE, searching = FALSE,
                                  columnDefs = list(list(visible=FALSE, targets=hideCol),
-                                                   list(className = 'dt-center', targets = '_all')),
+                                                   list(className = 'dt-center', targets = '_all')
+                                              ),
                               dom = 'Bfrtip',
                                 buttons = list(
                                   list(
@@ -247,7 +258,7 @@ render_de_table <- function(x, gene, var_type) {
       color = DT::styleEqual(c('a','b','c','d'),
                          c('white', 'black', 'black', 'white')
       )
-    ) %>% DT::formatRound(roundCols, c(2,3))
+    ) #%>% DT::formatRound(roundCols, c(2,3))
     
   })
 }

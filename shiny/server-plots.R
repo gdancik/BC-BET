@@ -38,7 +38,8 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL, trea
     return(df)
   } 
   
-  if (length(x$expr[[1]]) == 0 || any(!clin_column%in%colnames(y))) {
+  check_cols <- setdiff(clin_column, 'treated')
+  if (length(x$expr[[1]]) == 0 || any(!check_cols%in%colnames(y))) {
     return(NULL)
   }
   
@@ -138,12 +139,33 @@ bcbet_km <- function(df, ds, hr, p, endpoint) {
   upper = "upper 50%"; lower = "lower 50%"
   
   ## split into high and low groups using appropriate cutoff ## 
-  df$expression <- factor(df$x >= median(df$x), labels = c(lower,upper))
+  
+  risk <- try(factor(df$x >= median(df$x), labels = c(lower,upper)),
+           silent = TRUE)
+
+  if (class(t) != 'try-error') {
+    df$expression <- risk
+  } else {
+    df$expression <- 1
+  }
   
   ## plot graph ### ggplot2/GGally form
   km.group1 = survfit(Surv(y1, y2) ~ expression, data = df)
-  col <- c('darkblue', 'darkred')
+    
+  if(class(risk) == 'try-error') {
+    
+    g1 <- ggsurv(km.group1, lty.est = 0, cens.size = 0, plot.cens = FALSE, 
+           CI = FALSE) +
+      annotate('text', x = 0.5*(min(df$y1,na.rm=TRUE) + max(df$y1,na.rm=TRUE)),
+               y = .55, label = 'Expression >= median\nfor all samples') +
+      labs(x = 'Time (months)', 
+           y = paste0('Survival (', endpoint, ') probability')) + 
+      ggtitle(title) + ylim(c(0,1)) + theme_classic()
   
+    return(g1)
+  }
+  
+  col <- c('darkblue', 'darkred')
   ggsurv(km.group1, 
                     main = ds, 
                     surv.col = col, cens.col = col,
@@ -235,7 +257,11 @@ generatePlots <- function(plotType, graphOutputId) {
     ds <- results$dataset[i]
     
 
-    cat("getting data for: ", ds, "...\n")
+    cat("getting data for: ", ds, "\n",
+        '  columns: ', columns, "\n",
+        '  plotType: ', plotType, "\n",
+        '  treated: ', treated, '\n')
+    
     df <- get_mongo_df(ds, qry, columns, plotType, treated = treated)
     
     if (is.null(df) || nrow(df) == 0) {
