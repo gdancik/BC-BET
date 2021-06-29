@@ -4,6 +4,10 @@
  font-size:25px;
 }
 
+#invalidGeneOutput {
+    background-color:white;
+}
+
 .welcome {
     margin-left: 2%;
     margin-right:2%;

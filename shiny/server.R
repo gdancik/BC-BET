@@ -11,6 +11,7 @@ source("ui-tabResults.R")
 shinyServer(function(input, output, session) {
 
   source("server-geneSearch.R", local = TRUE)
+  source("server-multiGeneSearch.R", local = TRUE)
   source("server-bookmarking.R", local = TRUE)
   source("server-plots.R", local = TRUE)
   source("server-download.R", local = TRUE)
@@ -32,7 +33,8 @@ shinyServer(function(input, output, session) {
   
   
   updateSelectizeInput(session, 'geneInput', choices = VALID_GENES, 
-                       selected = 'FGFR3', server = TRUE) 
+                       selected = 'FGFR3', server = TRUE,
+                       options = list(maxOptions = 20)) 
   
 
   observe({

@@ -7,11 +7,15 @@ source("ui-about.R")
 source("ui-welcome.R")
 source("ui-progress.R")
 
+jsCode <- "shinyjs.setReadOnly = function(id) {
+  document.getElementById(id).setAttribute('readonly', 'readonly');
+}"
+
 function(request) {
 
 shinyUI(
   
-  navbarPage(title = HTML('<a style = "color:white" href = "/">BC-BET</a>'),
+    navbarPage(title = HTML('<a style = "color:white" href = "/">BC-BET</a>'),
              windowTitle = "Bladder Cancer Biomarker Evaluation Tool",
              id = "page", 
              header =  pleaseWait(),
@@ -27,6 +31,7 @@ shinyUI(
     
     # activate shinyJS and include CSS
     useShinyjs(),
+    shinyjs::extendShinyjs(text = jsCode, functions = c('setReadOnly')),
     includeCSS('www/ecsu.css')
       
   ) # end navbarPage

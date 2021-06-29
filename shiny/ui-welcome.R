@@ -1,4 +1,11 @@
 
+
+myTextAreaInput <- function(...) {
+  t <- textAreaInput(...)
+  t$attribs$style <- 'display:none'
+  t
+}
+
 userOptions <- list(
 
   fluidRow(style = 'margin-left:0px',
@@ -90,9 +97,10 @@ userGenes <- list(
                          rows = 6, resize = "none")
     ),
     column(4, style = "padding-right:0px",
-           div(class = 'hide',
-               textAreaInput('invalidGeneOutput', label = HTML("<span style = 'color:red'>Invalid Genes</span>"), 
-                             rows = 6)
+           div(class = 'nohide',
+               myTextAreaInput('invalidGeneOutput',
+                             label = HTML("<span style = 'color:red'>Invalid genes</span>"),
+                             rows = 6, resize = "none")
            )
     )
   ),
