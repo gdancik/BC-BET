@@ -50,62 +50,75 @@ observeEvent(input$btnGeneSearch,{
   # do nothing if no valid gene is selected
   if (is.null(input$geneInput) | input$geneInput == "") return()
 
-  setGLOBAL('submitType', 'btn')
-  
-  # clear multiGeneInput
-  updateTextAreaInput(session, "multiGeneInput", value = "")
-  shinyjs::disable('btnGeneSearch')
-  
-  resetResultsPage()
+  resetResultsPage(input$geneInput)
   
 }, ignoreInit = TRUE)
 
 
-resetResultsPage <- function() {
+resetResultsPage <- function(selectedGene) {
+  
+  setGLOBAL('submitType', 'btn')
   
   for (ch in REACTIVE_SEARCH$parameters) {
     REACTIVE_SEARCH$parameters[[ch]] <- NULL
   }
   
-  #resetGLOBAL()
-  #catn('inputs are: ', names(reactiveValuesToList(input)))
-  
-  catn("removing tab...")
-  #removeTab('page', 'Results')
-  catn('inserting tab...')
-  
+
   shinyjs::runjs("$('#please-wait').removeClass('hide');")
   
-  if (is.null(REACTIVE_SEARCH$gene)) {
-    insertTab('page', tabResults, "Home", position = "after")
-  }
   
-  REACTIVE_SEARCH$gene <- input$geneInput
+  REACTIVE_SEARCH$gene <- selectedGene
   REACTIVE_SEARCH$parameters <- list(measure = input$measure, 
                                      pvalue = input$pvalue, 
                                      endpoint = input$endpoint, 
                                      cutpoint = input$cutpoint,
                                      treated = input$treated)
   
-  output$ResultsHeader <- renderUI({
-    
-    l <- REACTIVE_SEARCH$parameters
-    
-    h4('Patient Analysis for', REACTIVE_SEARCH$gene, 
-       span('(', 
-            paste0(names(l), ': ', l, collapse = ', '), 
-            ')', style = 'font-size: 80%'),
-       style = 'margin:0px; color:darkred;')
-  })
-  
-  getSingleGeneResults()
-  
-  #showTab('page', 'Results')
-    
-  updateTabsetPanel(inputId = 'page', selected = 'Results')
-  updateTabsetPanel(inputId = 'resultsPage', selected = 'Summary')
+  geneHeader <- REACTIVE_SEARCH$gene
+  lgh <- length(geneHeader)
+  if (lgh > 1) {
+    geneHeader <- paste0(paste0(lgh, ' genes: '), paste0(geneHeader[1:min(lgh,3)], collapse = ','))
+    if (lgh > 3) {
+      geneHeader <- paste0(geneHeader, ',...')
+    }    
+  }
 
-  toggleSurvivalPlots(input$cutpoint)
+
+  # generate page header
+  l <- REACTIVE_SEARCH$parameters
+  myheader <- h4('Patient Analysis for', geneHeader, 
+     span('(', 
+          paste0(names(l), ': ', l, collapse = ', '), 
+          ')', style = 'font-size: 80%'),
+     style = 'margin:0px; color:darkred;')  
+    
+
+  if (length(selectedGene) == 1) {
+      shinyjs::disable('btnGeneSearch')
+    
+      # adding/removing tabs causes issues with a blue line;
+      # let's hide/show and insert tabs in server.R
+      hideTab('page', 'MultiResults')
+      showTab('page', 'Results') 
+      
+      getSingleGeneResults()
+      output$ResultsHeader <- renderUI({
+        myheader
+      })
+      updateTextAreaInput(session, "multiGeneInput", value = "")
+      updateTabsetPanel(inputId = 'resultsPage', selected = 'Summary')
+      toggleSurvivalPlots(input$cutpoint)
+      updateTabsetPanel(session, 'page', selected = 'Results')
+  } else {
+      hideTab('page', 'Results')
+      showTab('page', 'MultiResults')
+      output$MultiResultsHeader <- renderUI({
+        myheader
+      })
+      catn('multi gene results!')
+      getMultiGeneResults()
+      updateTabsetPanel(session, 'page', selected = 'MultiResults')
+  }
   
   shinyjs::runjs("$('#please-wait').addClass('hide');")
     

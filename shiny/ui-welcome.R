@@ -92,14 +92,14 @@ userGenes <- list(
   fluidRow(
     column(3, style = "padding-right:0px",
            textAreaInput('multiGeneInput', label = 'Select multiple genes (500 max)',
-                         value = "",
+                         value = "cd24\nfgfr3\nhras",
                          placeholder = 'Enter multiple genes, separated by spaces or one per line', 
                          rows = 6, resize = "none")
     ),
     column(4, style = "padding-right:0px",
            div(class = 'nohide',
                myTextAreaInput('invalidGeneOutput',
-                             label = HTML("<span style = 'color:red'>Invalid genes</span>"),
+                             label = HTML("<span id = 'invalid_gene_label'>Invalid genes</span>"),
                              rows = 6, resize = "none")
            )
     )
@@ -122,7 +122,7 @@ userGenes <- list(
            div(width = "100%",
                HTML("<label style = 'visibility:hidden'>hi</label>"),
                actionButton("btnMultiGeneSearch", "Evaluate Multiple Genes", class = "blue-button",
-                            style = "width:100%;", disabled = 'disabled')
+                            style = "width:100%;")#, disabled = 'disabled')
            )
     ),
     

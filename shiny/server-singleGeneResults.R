@@ -67,63 +67,18 @@ getSingleGeneResults <- reactive({
   catn('PROCESSING GENE: ', gene)
   
   qry <- paste0('{"gene":"', gene, '"}')
-  
-  # get DE results
-  types <- c('tumor', 'grade', 'stage')
-  res1 <- sapply(types, function(x, qry, cols) {
-    m <- mongo_connect(x)
-    fields <- paste0('{"_id":0, "gene":1, "dataset":1, ',
-                     paste0('"', cols, '":1', collapse = ', '),
-              '}')
-    m$find(qry, fields = fields)
-  }, qry = qry, cols = c(REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue), USE.NAMES = TRUE, simplify = FALSE)
-  
+
+  # get DE results  
+  res1 <- mongo_get_de_results(qry, c(REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue)) 
   res1 <- lapply(res1, arrange, dataset)
-  res1 <- lapply(res1, summarize_de, fc_col = REACTIVE_SEARCH$parameters$measure, p_col = REACTIVE_SEARCH$parameters$pvalue, count = FALSE)
+  res1 <- lapply(res1, summarize_de, 
+                 fc_col = REACTIVE_SEARCH$parameters$measure, 
+                 p_col = REACTIVE_SEARCH$parameters$pvalue, count = FALSE)
   
   # get survival results
-  types <- c('survival', 'survival_lg_nmi', 'survival_hg_mi')
-  
-  # specify endpoint -- for 'ba', do not change query
-  # qry <- paste0('{"gene":"', gene, '", "endpoint":"dss"}')
-  
-  cutpoint <- REACTIVE_SEARCH$parameters$cutpoint
-  
-  # m$find(' {"dataset": "dfci",  "treated": {"$ne": "include"}}  ')
-  
-  if (REACTIVE_SEARCH$parameters$treated == 'yes') {
-    treated_qry <- '"treated": {"$ne": "remove"}'
-  } else {
-    treated_qry <- '"treated": {"$ne": "include"}'
-  }
-  
-  res2 <- sapply(types, function(x, qry, cutpoint, treated_qry) {
-    m <- mongo_connect(x)
-    qry <- gsub("}", paste0(',', treated_qry, "}"), qry)
-    fields = paste0('{"_id":0, "gene":1, "dataset":1, "endpoint":1,',
-        paste0( c('\"hr_', '\"p_'), cutpoint, '\":1', collapse = ', '),
-    '}')
-    
-    m$find(qry, fields = fields)
-  }, qry = qry, cutpoint = cutpoint, treated_qry = treated_qry, USE.NAMES = TRUE, simplify = FALSE)
-  
-  res2 <- lapply(res2, arrange, dataset)
-  
-  # get specified endpoint, for now we assume 'ba' 
-  get_endpoint <- function(x, endpt) {
-    if (nrow(x) == 0) {
-      return(x)
-    }
-    
-    if (endpt != 'ba') {
-      return(x %>% dplyr::filter(endpoint == endpt))
-    }
-    x  %>% arrange(endpoint) %>% group_by(dataset) %>% slice_head()
-  }
-  
-  # if 'ba', then take first endpoint for each dataset (dss, os, rfs)
-
-  res2 <- lapply(res2, get_endpoint, endpt = REACTIVE_SEARCH$parameters$endpoint)
+  res2 <- mongo_get_survival_results(qry, REACTIVE_SEARCH$parameters$cutpoint,
+                                     REACTIVE_SEARCH$parameters$endpoint,
+                                     REACTIVE_SEARCH$parameters$treated) 
   
   res2 <- lapply(res2, summarize_de, 
                  fc_col = paste0('hr_', cutpoint), 
@@ -172,8 +127,6 @@ getSingleGeneResults <- reactive({
   
   REACTIVE_SEARCH$results_de <- res1
   REACTIVE_SEARCH$results_survival <- res2
-  
-  
   
 })
 
@@ -366,11 +319,11 @@ write_header_sheet <- function(filename, params) {
   header <- c('Description:\n',header)
   header <- c(p, '',header)
   
-  header <- gsub('pw', 'pw (p-values calculated using Wilcoxon test)',  header)
-  header <- gsub('pt', 'pt (p-values calculated using t-test)',  header)
+  header <- gsub('pvalue: pw', 'pvalue: pw (p-values calculated using Wilcoxon test)',  header)
+  header <- gsub('pvalue: pt', 'pvalue: pt (p-values calculated using t-test)',  header)
   
-  header <- gsub('treated: yes', 'treated: yes (include patients treated with BCG/adjuvant chemo in survival analysis',  header)
-  header <- gsub('treated: no', 'treated: no (remove patients treated with BCG/adjuvant chemo from survival analysis',  header)
+  header <- gsub('treated: yes', 'treated: yes (include patients treated with BCG/adjuvant chemo in survival analysis)',  header)
+  header <- gsub('treated: no', 'treated: no (remove patients treated with BCG/adjuvant chemo from survival analysis)',  header)
   
   
   write.xlsx(header, sheetName = 'Settings', file = filename,

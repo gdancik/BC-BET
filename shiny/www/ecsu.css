@@ -6,6 +6,16 @@
 
 #invalidGeneOutput {
     background-color:white;
+    color: gray;
+}
+
+
+.red {
+    color:red;
+}
+
+.green {
+    color:green;
 }
 
 .welcome {

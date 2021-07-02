@@ -1,3 +1,8 @@
+
+##########################################################
+# Handle Multiple Gene Search
+##########################################################
+
 # on multi gene search
 observeEvent(input$btnMultiGeneSearch,{
 
@@ -5,7 +10,7 @@ observeEvent(input$btnMultiGeneSearch,{
 
   genes <- getGenesFromMultiGeneInput()
 
-  n <- length(genes$ids)
+  n <- length(genes$valid)
   
   if (n == 0) {
     return()
@@ -16,16 +21,23 @@ observeEvent(input$btnMultiGeneSearch,{
     return()
   } 
   
-  updateSelectizeInput(session, "geneInput", choices = geneIDs, 
-                                            selected = "", server = TRUE)
-
+  #save(genes, VALID_GENES, file = 'look.RData')
+  m <- match(toupper(genes$valid), toupper(VALID_GENES))
+  selected <- VALID_GENES[m]
+  
+  cat('you selected: ', selected, '\n')
+  
+  if (n == 1) {
+    updateSelectizeInput(session, "geneInput", choices = VALID_GENES, 
+                         selected = selected, server = TRUE)
+  }
+  
+  # from server-geneSearch
+  resetResultsPage(selected)
+  
+  
 }, ignoreInit = TRUE)
 
-
-
-##########################################################
-# Handle Multiple Gene Search
-##########################################################
 
 observeEvent(input$multiGeneInput, {
   delay(500, validateGenes())
@@ -37,6 +49,7 @@ observeEvent(input$multiGeneInput, {
 #   invalid gene symbols and valid ids, or NULL if nothing is entered
 getGenesFromMultiGeneInput <- function() {
   
+
   genes <- strsplit(trimws(input$multiGeneInput), split = '\\s+')[[1]]
   
   if (length(genes) == 0) {
@@ -46,9 +59,9 @@ getGenesFromMultiGeneInput <- function() {
   genes_upper <- toupper(genes)
   all_genes <- toupper(VALID_GENES)
   
-  m <- match(genes_upper, all_genes)
-  invalid <- genes[is.na(m)]
-  m <- m[!is.na(m)]
+  m <- genes_upper %in% all_genes
+  
+  invalid <- genes[!m]
   valid <- genes[m]
   
   list(valid = valid, invalid = invalid)
@@ -68,12 +81,26 @@ validateGenes <- reactive({
   
   if (length(genes$invalid) > 0) {
     catn('we have invalid genes...')
+    shinyjs::html('invalid_gene_label', 'Invalid genes')
     shinyjs::show('invalidGeneOutput')
-    updateTextAreaInput(session, 'invalidGeneOutput', value = paste(genes$invalid, collapse = '\n'))
+    shinyjs::removeClass('invalid_gene_label', 'green')
+    shinyjs::addClass('invalid_gene_label', 'red')
+    updateTextAreaInput(session, 'invalidGeneOutput', 
+                        value = paste(genes$invalid, collapse = '\n'))
     js$setReadOnly('invalidGeneOutput')
     output$multiInvalidGeneMsg <- renderUI({
-      HTML("<span style = 'color:red'> Invalid genes detected</span>")
+      
     })
+  } else if (length(genes$valid) > 0) {
+    shinyjs::show('invalidGeneOutput')
+    shinyjs::html('invalid_gene_label', 'All genes are valid')
+    shinyjs::removeClass('invalid_gene_label', 'red')
+    shinyjs::addClass('invalid_gene_label', 'green')
+    
+    updateTextAreaInput(session, 'invalidGeneOutput', 
+                        value = '\n\nInvalid genes will be listed here')
+    
+    js$setReadOnly('invalidGeneOutput')
   } else {
     cat('no invalid genes...\n')
     output$multiInvalidGeneMsg <- renderUI({})
@@ -81,12 +108,12 @@ validateGenes <- reactive({
   }
   
  
-  # if (length(genes$ids) == 0 || setequal(genes$ids, selected$geneID)) {
-  #     shinyjs::disable('btnMultiGeneSearch')
-  # } else {
-  #     shinyjs::enable('btnMultiGeneSearch')
-  # }
-  
+  if (length(genes$valid) > 0) {
+    shinyjs::enable('btnMultiGeneSearch')
+  } else {
+    shinyjs::disable('btnMultiGeneSearch')
+  }
+
 })
 
 
@@ -103,4 +130,5 @@ observeEvent(input$multiGeneFile, {
   updateTextAreaInput(session, 'multiGeneInput', value = paste0(genes$V1, collapse = "\n"))
   
 }, ignoreInit = TRUE)
+
 
