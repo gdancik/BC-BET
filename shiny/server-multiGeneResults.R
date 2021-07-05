@@ -20,6 +20,11 @@ getMultiGeneResults <- reactive({
   
   res1 <- lapply(res1, reformat_multigene_results)
   res2 <- lapply(res2, reformat_multigene_results)
+  
+  
+  res1 <- lapply(res1, summarize_multi_results_de, REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue)
+  res2 <- lapply(res2, summarize_multi_results_survival, REACTIVE_SEARCH$parameters$cutpoint)
+    
   save(res1, res2, file = 'multiResults.RData')
 })
 
@@ -47,7 +52,7 @@ reformat_multigene_results <- function(res1) {
   tmp_df <- data.frame(matrix(ncol = length(columns)))
   colnames(tmp_df) <- columns
   
-  df_all <- construct_df_by_gene(s, tmp_df)
+  df_all <- reformat_df_by_gene(s, tmp_df)
   
   if (!is.null(endpoints)) {
     for (i in 1:nrow(endpoints)) {
@@ -83,4 +88,39 @@ reformat_df_by_gene <- function(s, template_df) {
   dd
 }
 
+summarize_multi_results_de <- function(r1, measure, pvalue) {
+  
+  ds <- gsub('_.*$', '', colnames(r1)[-1]) %>% unique()
+  
+  m1 <- match(paste0(ds, '_', measure), colnames(r1))
+  m2 <- match(paste0(ds, '_', pvalue), colnames(r1))
+  
+  measure_threshold <- 1
+  if (measure == 'auc') measure_threshold <- 0.50
+ 
+  calc_scores(r1, r1[,m1], r1[,m2], measure_threshold) 
+  
+}
 
+summarize_multi_results_survival <- function(r1, cutpoint) {
+  
+  ds <- gsub('_.*$', '', colnames(r1)[-1]) %>% unique()
+  columns <- gsub(' \\(.*', '', colnames(r1))
+  
+  m1 <- match(paste0(ds, '_hr_', cutpoint), columns)
+  m2 <- match(paste0(ds, '_p_', cutpoint), columns)
+
+  calc_scores(r1, r1[,m1], r1[,m2], 0.5) 
+}
+
+# calculate score based on vectors 'measures' and 'ps', and
+# add to 'r1'
+calc_scores <- function(r1, measures, ps, threshold) {
+  # need to handle NA values
+  measures[is.na(measures)] <- threshold
+  ps[is.na(ps)] <- 1
+  
+  score <- rowSums( mysign(measures - threshold) * as.integer(ps < 0.05))
+  
+  tibble::add_column(r1, score = score, .after = 'gene')
+}

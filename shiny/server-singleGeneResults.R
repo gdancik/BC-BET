@@ -76,7 +76,10 @@ getSingleGeneResults <- reactive({
                  p_col = REACTIVE_SEARCH$parameters$pvalue, count = FALSE)
   
   # get survival results
-  res2 <- mongo_get_survival_results(qry, REACTIVE_SEARCH$parameters$cutpoint,
+  
+  cutpoint <- REACTIVE_SEARCH$parameters$cutpoint
+  
+  res2 <- mongo_get_survival_results(qry, cutpoint,
                                      REACTIVE_SEARCH$parameters$endpoint,
                                      REACTIVE_SEARCH$parameters$treated) 
   
@@ -85,7 +88,7 @@ getSingleGeneResults <- reactive({
                  p_col = paste0('p_', cutpoint),
                  count = FALSE)
   
-  add_stats <- function(n, x, survival = NULL, treated_qry = NULL) {
+  add_stats <- function(n, x, survival = NULL, treated = NULL) {
     x <- x[[n]]
     if (nrow(x) == 0) {
       return(x)
@@ -94,9 +97,16 @@ getSingleGeneResults <- reactive({
     m <- mongo_connect(paste0('stats_', n))
 
     
-    if (is.null(treated_qry)) {
+    if (is.null(treated)) {
       stats <- m$find()  
     } else {
+      
+      if (treated == 'yes') {
+        treated_qry <- '"treated": {"$ne": "remove"}'
+      } else {
+        treated_qry <- '"treated": {"$ne": "include"}'
+      }
+      
       stats <- m$find(query = paste0('{',treated_qry, '}'))
     }
     
@@ -122,7 +132,7 @@ getSingleGeneResults <- reactive({
   # add stats for survival
   n <- names(res2)
   res2 <- lapply(n, add_stats, x = res2, survival = REACTIVE_SEARCH$parameters$endpoint,
-                 treated_qry = treated_qry)
+                 treated = REACTIVE_SEARCH$parameters$treated)
   names(res2) <- n
   
   REACTIVE_SEARCH$results_de <- res1
