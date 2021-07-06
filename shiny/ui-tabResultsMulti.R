@@ -14,6 +14,7 @@ tabDownload <- tabPanel('Download',
 # Results page
 tabResultsMulti <- tabPanel("Results", value = 'MultiResults',
       uiOutput('MultiResultsHeader'), hr(style = 'margin-top:10px; margin-bottom:10px'),
+      downloadLink('downloadMultiResults'),
       fluidRow(column(style='border-right: 1px solid',width = 12,
           tabsetPanel(id = "multiResultsPage",
               tabPanel('Summary',

@@ -132,3 +132,13 @@ observeEvent(input$multiGeneFile, {
 }, ignoreInit = TRUE)
 
 
+
+
+observeEvent(input$loadExampleLink, {
+  
+  # KEGG Bladder Cancer Pathway Genes:
+  # https://www.genome.jp/dbget-bin/www_bget?pathway:map05219
+  # https://www.genome.jp/dbget-bin/get_linkdb?-t+orthology+path:map05219
+  value <- c('TYMP\nMMP1\nMMP2\nMMP9\nCDK4\nHRAS\nEGF\nEGFR\nBRAF\nRAF1\nMAP2K1\nMAP2K2\nMAPK1\nMYC\nRPS6KA5\nTP53\nCCND1\nERBB2\nFGFR3\nVEGFA\nCDH1\nSRC\nRB1\nE2F3\nCDKN2A\nCDKN1A\nMDM2\nKRAS\nNRAS\nHBEGF\nDAPK1\nARAF\nE2F2\nRASSF1\nCXCL8\nTHBS1\nE2F1\nUPK3A')
+  updateTextAreaInput(session, "multiGeneInput", value = value)
+}) 

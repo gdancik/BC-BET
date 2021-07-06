@@ -25,6 +25,9 @@ getMultiGeneResults <- reactive({
   res1 <- lapply(res1, summarize_multi_results_de, REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue)
   res2 <- lapply(res2, summarize_multi_results_survival, REACTIVE_SEARCH$parameters$cutpoint)
     
+  REACTIVE_SEARCH$results_de <- res1
+  REACTIVE_SEARCH$results_survival <- res2
+  
   save(res1, res2, file = 'multiResults.RData')
 })
 
@@ -120,7 +123,8 @@ calc_scores <- function(r1, measures, ps, threshold) {
   measures[is.na(measures)] <- threshold
   ps[is.na(ps)] <- 1
   
-  score <- rowSums( mysign(measures - threshold) * as.integer(ps < 0.05))
+  score <- rowSums( sign(measures - threshold) * as.integer(ps < 0.05))
   
-  tibble::add_column(r1, score = score, .after = 'gene')
+  tibble::add_column(r1, score = score, .after = 'gene') %>%
+    arrange(desc(score), gene)
 }

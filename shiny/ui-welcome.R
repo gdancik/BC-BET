@@ -91,10 +91,12 @@ userGenes <- list(
   ),
   fluidRow(
     column(3, style = "padding-right:0px",
-           textAreaInput('multiGeneInput', label = 'Select multiple genes (500 max)',
+           textAreaInput('multiGeneInput', label = HTML('Enter multiple genes (500 max) (<a id = "loadExampleLink" href = "#" class = "action-button">Example</a>)'),
                          value = "cd24\nfgfr3\nhras",
                          placeholder = 'Enter multiple genes, separated by spaces or one per line', 
-                         rows = 6, resize = "none")
+                         rows = 6, resize = "none"),
+           bsTooltip('loadExadfdfdmpleLink', placement = 'top',
+                     'Load example gene list consisting of Bladder Cancer KEGG Pathway genes')
     ),
     column(4, style = "padding-right:0px",
            div(class = 'nohide',

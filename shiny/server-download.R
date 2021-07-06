@@ -1,4 +1,6 @@
 
+# gets list of datasets from REACIVE_SEARCH$results_de and 
+#   REACTIVE_SEARCH$results_survival
 get_datasets_from_results <- function() {
   
   gd <- function(x) {
@@ -118,25 +120,86 @@ observe({
 })
   
 
-# write_datasets <- function(ds, gene) {
-#   
-#   # check this -- not used currently
-#   
-#   tmpDir <- tempdir()
-#   
-#   tmpdirfiles <- Sys.glob(paste0(tmpDir,'/*.csv'))
-#   file.remove(Sys.glob(tmpdirfiles))
-#   qry <- paste0('{"gene": "', gene, '"}')
-#   
-#   for (ds1 in ds) {
-#     filename = paste(ds1, ".csv", sep = "")
-#     df <- get_mongo_df(ds1, qry)
-#     write.csv(df, paste0(tmpDir,'/',filename), row.names = FALSE)
-#     
-#   }
-#   
-#   zip( paste0('bcbet_', gene, '.zip'), tmpdirfiles)
-#   
-# }
-# 
-# 
+
+write_sheet <- function(sheet, RES, filename) {
+  x <- RES[[sheet]]
+  x$category <- NULL
+  
+  # format columns
+  columns <- bcbet_column_names()
+  
+  m <- match(colnames(x), columns)
+  
+  colnames(x)[!is.na(m)] <- names(columns)[m[!is.na(m)]]
+  
+  write.xlsx(x, sheetName = toupper(sheet), file = filename,
+             row.names = FALSE, append = TRUE)
+}
+
+write_header_sheet <- function(filename, params) {
+  
+  p <- paste0(names(params), ': ', params)
+  p <- paste0('- ', p, sep = '')
+  p <- c('Statistical parameters:\n', p)
+  
+  header <- c("- TUMOR: FC > 1 means that expression is higher in tumors compared to normal samples",
+              "- GRADE: FC > 1 means that expression is higher in high grade (hg) tumors compared to low grade (lg) tumors",
+              "- STAGE: FC > 1 means that expression is higher in muscle invasive (mi) tumors compared to non-muscle invasive (nmi) tumors",
+              "- SURVIVAL: HR > 1 means that high expression is associated with poor prognosis"
+  ) 
+  
+  header <- c('Description:\n',header)
+  header <- c(p, '',header)
+  
+  header <- gsub('pvalue: pw', 'pvalue: pw (p-values calculated using Wilcoxon test)',  header)
+  header <- gsub('pvalue: pt', 'pvalue: pt (p-values calculated using t-test)',  header)
+  
+  header <- gsub('treated: yes', 'treated: yes (include patients treated with BCG/adjuvant chemo in survival analysis)',  header)
+  header <- gsub('treated: no', 'treated: no (remove patients treated with BCG/adjuvant chemo from survival analysis)',  header)
+  
+  
+  if (length(REACTIVE_SEARCH$gene) > 1) {
+    header <- c(header, '\n', 
+                'SCORE is calculated as score_up - score_down, where',
+                '- score_up = sum(upregulated AND P < 0.05)',
+                '- score_down = sum(downregulated AND P < 0.05)', '\n',
+                'where upregulated means FC > 1 or HR > 1.', '\n',
+                'Results are sorted by score (so downregulated genes will be at the bottom of the list)')
+  }
+  
+  write.xlsx(header, sheetName = 'Settings', file = filename,
+             row.names = FALSE, append = TRUE, col.names = FALSE)
+  
+}
+
+write_all_results <- function(filename) {
+  write_header_sheet(filename, REACTIVE_SEARCH$parameters)
+  res1 <- isolate(REACTIVE_SEARCH$results_de)
+  res2 <- isolate(REACTIVE_SEARCH$results_survival)
+  sapply(names(res1), write_sheet, RES = res1, filename = filename)
+  sapply(names(res2), write_sheet, RES = res2, filename = filename)
+} 
+
+
+
+resultsDownloadHandler <- downloadHandler(
+  filename = function() {
+    
+    if (length(REACTIVE_SEARCH$gene) > 1) {
+      return('bcbet_multigene.xlsx')
+    }
+    paste('bcbet_', REACTIVE_SEARCH$gene, '.xlsx', sep='')
+  },
+  content = function(con) {
+    shinyjs::runjs("$('#please-wait').removeClass('hide');")
+    write_all_results(con)
+    shinyjs::runjs("$('#please-wait').addClass('hide');")
+    #write.csv(data, con)
+  }
+)
+
+output$downloadAllResults <- resultsDownloadHandler # on download page
+output$download_results <- resultsDownloadHandler # hidden link to trigger download on summary page
+
+output$downloadMultiResults <- resultsDownloadHandler  # download multiple results
+
