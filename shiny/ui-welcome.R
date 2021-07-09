@@ -95,7 +95,7 @@ userGenes <- list(
                          value = "cd24\nfgfr3\nhras",
                          placeholder = 'Enter multiple genes, separated by spaces or one per line', 
                          rows = 6, resize = "none"),
-           bsTooltip('loadExadfdfdmpleLink', placement = 'top',
+           bsTooltip('loadExampleLink', placement = 'top',
                      'Load example gene list consisting of Bladder Cancer KEGG Pathway genes')
     ),
     column(4, style = "padding-right:0px",

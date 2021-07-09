@@ -28,6 +28,8 @@ getMultiGeneResults <- reactive({
   REACTIVE_SEARCH$results_de <- res1
   REACTIVE_SEARCH$results_survival <- res2
   
+  
+  displayMultiResultsTable()
   save(res1, res2, file = 'multiResults.RData')
 })
 
@@ -128,3 +130,65 @@ calc_scores <- function(r1, measures, ps, threshold) {
   tibble::add_column(r1, score = score, .after = 'gene') %>%
     arrange(desc(score), gene)
 }
+
+
+# sample_score_distribution <- function() {
+#   
+#   create_score_df <- function(type, res) {
+#     data.frame(type = type, score = res[[type]]$score)
+#   }
+#   
+#   scores <- lapply(names(res1), create_score_df, res = res1)
+#   scores <- do.call('rbind', scores)
+#   
+# }
+
+
+summarize_score_table1 <- function(type, res) {
+  r <- res[[type]]
+  #filter(r, score != 0) %>% 
+  r %>% arrange(desc(abs(score))) %>% select(gene,score) %>% 
+    slice_head(n=10) %>% tibble::add_column(analysis = type, .after = 'gene')
+}
+
+summarize_score_table <- function(res1, res2) {
+  r <- lapply(names(res1), summarize_score_table1, res1)
+  r <- do.call('rbind', r)
+  
+  r2 <- lapply(names(res2), summarize_score_table1, res2)
+  r2 <- do.call('rbind', r2)
+  rr <- rbind(r,r2)
+  
+}
+
+displayMultiResultsTable <- function() {
+
+  catn('get multisummary table...')
+  rr <- summarize_score_table(REACTIVE_SEARCH$results_de,
+                              REACTIVE_SEARCH$results_survival)
+  
+  rr <- rr %>% mutate(category = sign(score))
+  
+  mytable <- DT::datatable(rr, rownames = FALSE,filter = 'none', selection = 'none',
+                           options = list(searching = TRUE,
+                                          columnDefs = list( list(visible=FALSE, targets=3),
+                                                             list(className = 'dt-center', targets = '_all'))
+                                          #dom = 'Bfrtip'
+                           )) %>% DT::formatStyle('category',target = 'row',
+                                                  backgroundColor = DT::styleEqual(c('1','0','-1'), 
+                                                                                   c('darkred', 'white', 'darkblue')
+                                                  ), #fontWeight = 'bold',
+                                                  color = DT::styleEqual(c('1','0','-1'),
+                                                                         c('white', 'black', 'white')
+                                                  )
+                           )
+  
+  output$tableMultiSummary <- renderDataTable(mytable)  
+  
+}
+
+
+observeEvent(input$score_expand, {
+  catn('click')
+  shinyjs::runjs('$("#score_div").toggleClass("hide");')
+})

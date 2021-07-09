@@ -132,8 +132,6 @@ observeEvent(input$multiGeneFile, {
 }, ignoreInit = TRUE)
 
 
-
-
 observeEvent(input$loadExampleLink, {
   
   # KEGG Bladder Cancer Pathway Genes:
