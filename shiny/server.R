@@ -3,6 +3,7 @@
 library(shiny)
 library(ggplot2)
 library(DT)
+library(pheatmap)
 
 library(RMariaDB)
 
@@ -46,9 +47,10 @@ shinyServer(function(input, output, session) {
   
   insertTab('page', tabResults, "Home", position = "after")
   hideTab('page', 'Results')
-  
+
   insertTab('page', tabResultsMulti, "Home", select = TRUE, position = "after")
-  hideTab('page', 'MultiResults')  
+  hideTab('page', 'MultiResults')
+  
   
 })
 

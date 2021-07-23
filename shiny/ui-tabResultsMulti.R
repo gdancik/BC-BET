@@ -34,12 +34,27 @@ tabResultsMulti <- tabPanel("Results", value = 'MultiResults',
                        "<li>survival: HR > 1 means that high expression is associated with poor prognosis </li></ul>"))
                        , br(), hr(),
                       
-                       fluidRow(column(1), column(4,
-                          withSpinner(DT::dataTableOutput('tableMultiSummary'))
-                       )), br()
+                       fluidRow(
+                         column(1), column(10,
+                          plotOutput('heatmap')
+                         )
+                       ), br(),
+                         fluidRow(column(1), column(10, 
+                                tabsetPanel(id = 'tabSummaryMultiTable',
+                                              type = 'pills',
+                                              tabPanel('Tumor'),
+                                              tabPanel('Grade'),
+                                              tabPanel('Stage'),
+                                              tabPanel('Survival'),
+                                              tabPanel('Survival_LG_NMI'),
+                                              tabPanel('Survival_HG_MI')
+                                              ),
+                                  br(), DT::dataTableOutput('tableMultiSummary')
+                                )
+                          )# end fluid Row
+                       )
               )
-          ))
-      )
-)
+          )
+))
 
 

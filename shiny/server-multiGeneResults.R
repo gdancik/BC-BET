@@ -1,3 +1,5 @@
+library(pheatmap)
+
 getMultiGeneResults <- reactive({
   
   genes <- REACTIVE_SEARCH$gene
@@ -29,7 +31,14 @@ getMultiGeneResults <- reactive({
   REACTIVE_SEARCH$results_survival <- res2
   
   
-  displayMultiResultsTable()
+  displayMultiResultsTable('tumor')
+  
+  output$heatmap <- renderPlot({
+    
+    #heatmap(as.matrix(iris[,1:3]))
+    generate_heatmap(REACTIVE_SEARCH$results_de,  REACTIVE_SEARCH$results_survival)
+  })
+  
   save(res1, res2, file = 'multiResults.RData')
 })
 
@@ -147,8 +156,8 @@ calc_scores <- function(r1, measures, ps, threshold) {
 summarize_score_table1 <- function(type, res) {
   r <- res[[type]]
   #filter(r, score != 0) %>% 
-  r %>% arrange(desc(abs(score))) %>% select(gene,score) %>% 
-    slice_head(n=10) %>% tibble::add_column(analysis = type, .after = 'gene')
+  r %>% arrange(desc(abs(score))) %>% select(gene,score) %>% #slice_head(n=10) %>%
+    tibble::add_column(analysis = type, .after = 'gene')
 }
 
 summarize_score_table <- function(res1, res2) {
@@ -161,13 +170,19 @@ summarize_score_table <- function(res1, res2) {
   
 }
 
-displayMultiResultsTable <- function() {
+displayMultiResultsTable <- function(selected = NULL) {
 
   catn('get multisummary table...')
   rr <- summarize_score_table(REACTIVE_SEARCH$results_de,
                               REACTIVE_SEARCH$results_survival)
   
+  head(rr)
+  
   rr <- rr %>% mutate(category = sign(score))
+  
+  if (!is.null(selected)) {
+    rr <- rr %>% filter(analysis == selected)
+  }
   
   mytable <- DT::datatable(rr, rownames = FALSE,filter = 'none', selection = 'none',
                            options = list(searching = TRUE,
@@ -187,8 +202,77 @@ displayMultiResultsTable <- function() {
   
 }
 
-
 observeEvent(input$score_expand, {
   catn('click')
   shinyjs::runjs('$("#score_div").toggleClass("hide");')
 })
+
+
+## heatmap functions ##
+format_for_heatmap <- function(i, res) {
+  x <- res[[i]]
+  x <- x %>% select(gene, score) %>% arrange(desc(abs(score)))
+  colnames(x)[2] <- names(res)[i]
+  x
+}
+
+# maximum number of valid datasets in results
+# 2 columns for measure/p-value and 2 for gene/score
+num_ds_for_heatmap <- function(i, res) {
+  m <- max(rowSums(!is.na(res[[i]])))
+  m/2 - 1
+}
+
+
+generate_heatmap <- function(res1, res2) {
+  # add tumor, grade, stage
+  
+  l1 <- lapply(1:length(res1), format_for_heatmap, res1)
+  x <- l1[[1]]
+  for (i in 2:length(l1)) {
+    x <- full_join(x, l1[[i]])
+  }
+
+  # add survival, lg_nmi_survival, and hg_mi_survival
+  l2 <- lapply(1:length(res2), format_for_heatmap, res2)
+  for (i in 1:length(l2)) {
+    x <- full_join(x, l2[[i]])
+  }
+
+  rownames(x) <- x$gene
+  x <- x[,2:ncol(x)]
+
+  ds_scale <- c(sapply(1:length(res1), num_ds_for_heatmap, res1),
+              sapply(1:length(res2), num_ds_for_heatmap, res2))
+
+  colors <- colorRampPalette(rev(c('darkred', 'pink', 'white', 'blue', 'darkblue')))(100)
+
+  catn('generating heatmap now...\n')
+  
+   pheatmap(t(sweep(x,2, ds_scale, FUN = "/")), cluster_rows = FALSE, color = colors, 
+           display_numbers = t(x), number_color = 'white')
+   
+  #x <- as.matrix(x)
+  #heatmap(sweep(x,2, ds_scale, FUN = "/"), Colv = FALSE, col = colors)
+           
+  # heatmaply(sweep(x,2, ds_scale, FUN = "/"), colors = colors, 
+  #           grid_gap = 1, cellnote = x)
+  # 
+}
+
+
+observeEvent(input$tabSummaryMultiTable, {
+  l <- list(input$tabSummaryMultiTable, REACTIVE_SEARCH$results_de, REACTIVE_SEARCH$gene)  
+  
+  if (any(sapply(l, is.null))) {
+    return(NULL)
+  }
+  
+  cat('clicked on: ', input$tabSummaryMultiTable, '...\n')
+  catn('gene = ', REACTIVE_SEARCH$gene)
+  
+  selected <- tolower(input$tabSummaryMultiTable)
+  displayMultiResultsTable(selected)  
+  
+})
+
