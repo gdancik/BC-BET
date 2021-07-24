@@ -148,7 +148,7 @@ td {
 }
 
 
-#plotsPage, #tabSummaryTable {
+#plotsPage, #tabSummaryTable, #tabSummaryMultiTable {
     margin-top: 5px;
     background-color: aliceblue;
 }

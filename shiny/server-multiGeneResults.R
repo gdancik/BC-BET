@@ -31,7 +31,7 @@ getMultiGeneResults <- reactive({
   REACTIVE_SEARCH$results_survival <- res2
   
   
-  displayMultiResultsTable('tumor')
+  displayMultiResultsTable('Tumor')
   
   output$heatmap <- renderPlot({
     
@@ -172,35 +172,37 @@ summarize_score_table <- function(res1, res2) {
 
 displayMultiResultsTable <- function(selected = NULL) {
 
-  catn('get multisummary table...')
-  rr <- summarize_score_table(REACTIVE_SEARCH$results_de,
-                              REACTIVE_SEARCH$results_survival)
-  
-  head(rr)
-  
-  rr <- rr %>% mutate(category = sign(score))
-  
-  if (!is.null(selected)) {
-    rr <- rr %>% filter(analysis == selected)
+  if (selected %in% c('Tumor', 'Stage', 'Grade')) {
+    x <- REACTIVE_SEARCH$results_de[[tolower(selected)]]
+  } else {
+    x <- REACTIVE_SEARCH$results_survival[[tolower(selected)]]
   }
   
-  mytable <- DT::datatable(rr, rownames = FALSE,filter = 'none', selection = 'none',
-                           options = list(searching = TRUE,
-                                          columnDefs = list( list(visible=FALSE, targets=3),
-                                                             list(className = 'dt-center', targets = '_all'))
-                                          #dom = 'Bfrtip'
-                           )) %>% DT::formatStyle('category',target = 'row',
-                                                  backgroundColor = DT::styleEqual(c('1','0','-1'), 
-                                                                                   c('darkred', 'white', 'darkblue')
-                                                  ), #fontWeight = 'bold',
-                                                  color = DT::styleEqual(c('1','0','-1'),
-                                                                         c('white', 'black', 'white')
-                                                  )
-                           )
+  mycolumns <- colnames(x)
   
-  output$tableMultiSummary <- renderDataTable(mytable)  
+  g1 <- grep('_auc|_fc|_hr', mycolumns)
+  g2 <- grep('_p', mycolumns)
+  
+  mytable <- DT::datatable(x, rownames = FALSE,filter = 'none', selection = 'none',
+                           options = list(scrollX = TRUE, scrollY = '400px', paging = FALSE)
+              ) %>% formatRound(mycolumns[g1]) %>% 
+                    formatRound(mycolumns[g2], digits = 3)
+  
+
+  
+  return(mytable)
+  
+  #output[[paste0('tableMultiSummary', selected)]] <- renderDataTable(mytable)  
   
 }
+
+
+observe({
+  
+  output$tableMultiSummary <- renderDataTable(displayMultiResultsTable(input$tabSummaryMultiTable))
+})
+
+
 
 observeEvent(input$score_expand, {
   catn('click')
@@ -271,7 +273,7 @@ observeEvent(input$tabSummaryMultiTable, {
   cat('clicked on: ', input$tabSummaryMultiTable, '...\n')
   catn('gene = ', REACTIVE_SEARCH$gene)
   
-  selected <- tolower(input$tabSummaryMultiTable)
+  selected <- input$tabSummaryMultiTable
   displayMultiResultsTable(selected)  
   
 })
