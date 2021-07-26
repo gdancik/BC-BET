@@ -20,9 +20,21 @@ getMultiGeneResults <- reactive({
                                      REACTIVE_SEARCH$parameters$treated) 
   
   
+  # remove NULL results
+  remove_null <- function(r) {
+    for (n in names(r)) {
+      if (nrow(r[[n]]) == 0) {
+        r[[n]] <- NULL
+      }
+    }
+    r
+  }
+  
+  res1 <- remove_null(res1)
+  res2 <- remove_null(res2)
+  
   res1 <- lapply(res1, reformat_multigene_results)
   res2 <- lapply(res2, reformat_multigene_results)
-  
   
   res1 <- lapply(res1, summarize_multi_results_de, REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue)
   res2 <- lapply(res2, summarize_multi_results_survival, REACTIVE_SEARCH$parameters$cutpoint)
@@ -130,6 +142,7 @@ summarize_multi_results_survival <- function(r1, cutpoint) {
 # calculate score based on vectors 'measures' and 'ps', and
 # add to 'r1'
 calc_scores <- function(r1, measures, ps, threshold) {
+  
   # need to handle NA values
   measures[is.na(measures)] <- threshold
   ps[is.na(ps)] <- 1
@@ -154,7 +167,9 @@ calc_scores <- function(r1, measures, ps, threshold) {
 
 
 summarize_score_table1 <- function(type, res) {
+  
   r <- res[[type]]
+  
   #filter(r, score != 0) %>% 
   r %>% arrange(desc(abs(score))) %>% select(gene,score) %>% #slice_head(n=10) %>%
     tibble::add_column(analysis = type, .after = 'gene')
@@ -177,7 +192,12 @@ displayMultiResultsTable <- function(selected = NULL) {
   } else {
     x <- REACTIVE_SEARCH$results_survival[[tolower(selected)]]
   }
-  
+
+  if (is.null(x)) {
+    return(DT::datatable(data.frame(results = integer()), colnames = NULL,
+                         options = list(paging = FALSE)))
+  }
+    
   mycolumns <- colnames(x)
   
   g1 <- grep('_auc|_fc|_hr', mycolumns)
@@ -278,3 +298,13 @@ observeEvent(input$tabSummaryMultiTable, {
   
 })
 
+
+observe({
+
+  output$score_description <- renderUI(
+    HTML(
+        fc_description(REACTIVE_SEARCH$parameters$measure, TRUE, TRUE), "</br>",
+    )
+  )
+    
+})

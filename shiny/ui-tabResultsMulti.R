@@ -26,26 +26,24 @@ tabResultsMulti <- tabPanel("Results", value = 'MultiResults',
                           downloadButton('downloadMultiResults')
                       ), br(),
                       
-                      div(HTML("A summary of your results, consisting of the top 10 genes for each analysis, is shown below. By default results are grouped by analysis and sorted by magnitude of score",
-                               "(<a id = 'score_expand' class = 'action-button'>expand/hide</a>)"),
-                      ),       
-                      div(id = 'score_div', class = 'hide', br(), HTML("A gene\'s <i>score</i> for an analysis is calculated as score_up - score_down, where",
-                                                                       "<ul><li>score_up = sum(upregulated AND P < 0.05)</li>",
-                                                                       "<li>score_down = sum(downregulated AND P < 0.05)</li></ul>",
-                                                                       'and where <ul>',
-                                                                       "<li>tumor: FC > 1 means that expression is higher in tumors compared to normal samples</li>",
-                                                                       "<li>grade: FC > 1 means that expression is higher in high grade (hg) tumors compared to low grade (lg) tumors </li>",
-                                                                       "<li>stage: FC > 1 means that expression is higher in muscle invasive (mi) tumors compared to non-muscle invasive (nmi) tumors </li>",
-                                                                       "<li>survival: HR > 1 means that high expression is associated with poor prognosis </li></ul>"))
-                      , br(), hr(),
+                      div(HTML("A <i>score</i> is calculated for each gene and each analysis, and the magnitude of the score is roughly equal to the number of cohorts with statistically significant (P < 0.05) results.",
+                               "A high score indicates that high expression (upregulation) of the gene is significantly (P < 0.05) associated with tumor, high grade, muscle invasive, or poor outcomes,",
+                               "while low scores indicate the opposite relationship. (<a id = 'score_expand' class = 'action-button'>more info</a>)"),
+                          bsModal('modal_score_info', 'Score calculation', 'score_expand', size = 'large',
+                                  uiOutput('score_description')
+                          )
+                      ), hr(),
           tabsetPanel(id = "multiResultsPage",
-              tabPanel('Summary', br(),
+              tabPanel('Summary Heatmap', 
                        fluidRow(
                          column(1), column(10,
                           plotOutput('heatmap')
                          )
-                       )
-               ), tabPanel('Summary Table',
+                       ),
+                       fluidRow(column(1), column(10,
+                        p("The heatmap summarizes each gene/analysis by its score, with colors denoting the scaled score between -1 and 1, and is equal to score / number of datasets")
+                       )), br()
+               ), tabPanel('Tables',
                          fluidRow(column(1), column(10, 
                                 tabsetPanel(id = 'tabSummaryMultiTable',
                                               type = 'pills',
@@ -56,7 +54,7 @@ tabResultsMulti <- tabPanel("Results", value = 'MultiResults',
                                               tabPanel('Survival_LG_NMI'),
                                               tabPanel('Survival_HG_MI')
                                             ),
-                                  DT::dataTableOutput('tableMultiSummary')
+                                  DT::dataTableOutput('tableMultiSummary'), br()
                                 )
                           )# end fluid Row
                        ) # end tabPanel

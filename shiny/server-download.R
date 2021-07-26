@@ -136,19 +136,58 @@ write_sheet <- function(sheet, RES, filename) {
              row.names = FALSE, append = TRUE)
 }
 
-write_header_sheet <- function(filename, params) {
+fc_description <- function(measure, html = FALSE, multi = FALSE) {
+  
+  if (multi) {
+    h0 <- c('', 'First, define upregulated (FC > 1 or HR > 1) to mean the following for each phenotype:</br>')
+  } else {
+    h0 <- 'A gene is upregulated (FC > 1 or HR > 1) for a phenotype if the following is true:'
+  }
+  header <- c("- tumor: expression is higher in tumors compared to normal samples",
+              "- grade: expression is higher in high grade (hg) tumors compared to low grade (lg) tumors",
+              "- stage: expression is higher in muscle invasive (mi) tumors compared to non-muscle invasive (nmi) tumors",
+              "- survival: high expression is associated with poor prognosis")
+            
+  if (html) {
+    header <- paste0('<li>', gsub('^- ','',header), '</li>')
+  }
+  
+  
+  
+  header <- c(h0, "<ul>", header, "", "</ul>A gene is downregulated if FC < 1 or HR < 1.")
+  if (multi) {
+    header <- c(header, "","A gene\'s <i>score</i> for an analysis is then calculated as</br></br>",
+                "<span style = 'margin-left:15px'><i>score = number of datasets with significant (P < 0.05) upregulation - number of datasets with significant (P < .05) downregulation</i></span>")
+  }
+    
+  if (measure != 'fc') {
+    header <- gsub('FC > 1', 'AUC > 0.50', header)
+  }
+  
+  if (!html) {
+    header <- gsub('<span style = \'margin-left:15px\'>|</span>|</br>|<ul>|</ul>|<i>|</i>', '', header)
+  } else {
+    header <- paste0(header, collapse = '\n')
+  }
+  
+  header
+  
+}
+
+write_header_sheet <- function(filename, params, multi = FALSE) {
   
   p <- paste0(names(params), ': ', params)
   p <- paste0('- ', p, sep = '')
   p <- c('Statistical parameters:\n', p)
   
-  header <- c("- TUMOR: FC > 1 means that expression is higher in tumors compared to normal samples",
-              "- GRADE: FC > 1 means that expression is higher in high grade (hg) tumors compared to low grade (lg) tumors",
-              "- STAGE: FC > 1 means that expression is higher in muscle invasive (mi) tumors compared to non-muscle invasive (nmi) tumors",
-              "- SURVIVAL: HR > 1 means that high expression is associated with poor prognosis"
-  ) 
+  header <- fc_description(params$measure, html = FALSE, multi)
   
-  header <- c('Description:\n',header)
+  if (multi) {
+    header <- c('Description and score calculation:\n',header)  
+  } else {
+    header <- c('Description:\n',header)
+  }
+  
   header <- c(p, '',header)
   
   header <- gsub('pvalue: pw', 'pvalue: pw (p-values calculated using Wilcoxon test)',  header)
@@ -158,22 +197,13 @@ write_header_sheet <- function(filename, params) {
   header <- gsub('treated: no', 'treated: no (remove patients treated with BCG/adjuvant chemo from survival analysis)',  header)
   
   
-  if (length(REACTIVE_SEARCH$gene) > 1) {
-    header <- c(header, '\n', 
-                'SCORE is calculated as score_up - score_down, where',
-                '- score_up = sum(upregulated AND P < 0.05)',
-                '- score_down = sum(downregulated AND P < 0.05)', '\n',
-                'where upregulated means FC > 1 or HR > 1.', '\n',
-                'Results are sorted by score (so downregulated genes will be at the bottom of the list)')
-  }
-  
   write.xlsx(header, sheetName = 'Settings', file = filename,
              row.names = FALSE, append = TRUE, col.names = FALSE)
   
 }
 
 write_all_results <- function(filename) {
-  write_header_sheet(filename, REACTIVE_SEARCH$parameters)
+  write_header_sheet(filename, REACTIVE_SEARCH$parameters, length(REACTIVE_SEARCH$gene) > 1)
   res1 <- isolate(REACTIVE_SEARCH$results_de)
   res2 <- isolate(REACTIVE_SEARCH$results_survival)
   sapply(names(res1), write_sheet, RES = res1, filename = filename)
