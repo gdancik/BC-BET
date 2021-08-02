@@ -162,6 +162,7 @@ fc_description <- function(measure, html = FALSE, multi = FALSE) {
     
   if (measure != 'fc') {
     header <- gsub('FC > 1', 'AUC > 0.50', header)
+    header <- gsub('FC < 1', 'AUC < 0.50', header)
   }
   
   if (!html) {

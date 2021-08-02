@@ -264,6 +264,11 @@ generate_heatmap <- function(res1, res2) {
   rownames(x) <- x$gene
   x <- x[,2:ncol(x)]
 
+  if (nrow(x) > 100) {
+    mm <- apply(abs(x), 1, max, na.rm=TRUE)
+    x <- dplyr::arrange(x, desc(mm)) %>% slice_head(n=100)
+  }
+  
   ds_scale <- c(sapply(1:length(res1), num_ds_for_heatmap, res1),
               sapply(1:length(res2), num_ds_for_heatmap, res2))
 

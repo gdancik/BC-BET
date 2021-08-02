@@ -70,7 +70,7 @@ userSingleGene <- list(
              <a href = 'https://www.genenames.org/tools/multi-symbol-checker/' target = '_blank'>genenames.org</a>.</p>"),
   
   fluidRow(
-    column(3, style="padding-right:0px",
+    column(3,
            selectizeInput("geneInput", label = "Select a gene (begin typing for more)", 
                           choices = sort(c("", "FPR1", "CIITA", "TP53", "HRAS", "CD24", "FGFR3")))
     ),
@@ -89,43 +89,51 @@ userGenes <- list(
   fluidRow(
     h4('Select multiple genes ', style = 'padding-left:15px')
   ),
+  
   fluidRow(
-    column(3, style = "padding-right:0px",
-           textAreaInput('multiGeneInput', label = HTML('Enter multiple genes (500 max) (<a id = "loadExampleLink" href = "#" class = "action-button">Example</a>)'),
+    column(3,
+           textAreaInput('multiGeneInput', label = HTML('Enter up to 500 genes (<a id = "loadExampleLink" href = "#" class = "action-button">Example</a>)'),
                          value = "cd24\nfgfr3\nhras",
                          placeholder = 'Enter multiple genes, separated by spaces or one per line', 
-                         rows = 6, resize = "none"),
+                         rows = 10, resize = "none"),
            bsTooltip('loadExampleLink', placement = 'top',
                      'Load example gene list consisting of Bladder Cancer KEGG Pathway genes')
     ),
-    column(4, style = "padding-right:0px",
-           div(class = 'nohide',
-               myTextAreaInput('invalidGeneOutput',
-                             label = HTML("<span id = 'invalid_gene_label'>Invalid genes</span>"),
-                             rows = 6, resize = "none")
-           )
-    )
-  ),
-  
-  fluidRow(
-    h4('- OR- ', style = 'padding-left:15px')
-  ),
-  
-  fluidRow(
-    column(3, style = "padding-left:15px",
-           fileInput("multiGeneFile", "Upload genes from file (500 max)",
+    column(4, style = "padding-left:15px",
+           fileInput("multiGeneFile", "Or upload genes from file (500 max)",
                      accept = c(
                        "text/csv",
                        "text/comma-separated-values,text/plain",
                        ".csv")
+           ),
+           div(class = 'nohide',
+               myTextAreaInput('invalidGeneOutput',
+                               label = HTML("<span id = 'invalid_gene_label'>Invalid genes </span>"),
+                               rows = 5, resize = "none")
            )
     ),
+    column(4, style = "padding-right:0px",
+           
+    )
+  ),
+  
+  fluidRow(column(3,
+                  div(width = "100%",
+                      #HTML("<label style = 'visibility:hidden'>hi</label>"),
+                      actionButton("btnMultiGeneSearch", "Evaluate Multiple Genes", class = "blue-button",
+                                   style = "width:100%;")#, disabled = 'disabled')
+                  ), br(), br()
+  ),
+    column(4, div(width = "100%",
+                  actionButton('btnRemoveInvalidGenes', 'Remove', 
+                               class = 'red-button', style = "width:300px; display:none;"))
+    )
+  ),
+
+  fluidRow(
+
     column(2, style = "vertical-align:middle; padding-left:0px", 
-           div(width = "100%",
-               HTML("<label style = 'visibility:hidden'>hi</label>"),
-               actionButton("btnMultiGeneSearch", "Evaluate Multiple Genes", class = "blue-button",
-                            style = "width:100%;")#, disabled = 'disabled')
-           )
+           
     ),
     
     actionButton('btnReprocessQuery', 'Reprocess', class = 'hide')

@@ -45,6 +45,20 @@ observeEvent(input$multiGeneInput, {
 }, ignoreInit = TRUE, ignoreNULL = TRUE)
 
 
+observeEvent(input$btnRemoveInvalidGenes, {
+  catn('remove them!')
+  
+  x <- scan(text = input$multiGeneInput, what = 'character', quiet = TRUE)
+  ii <- scan(text = input$invalidGeneOutput, what = 'character', quiet = TRUE)
+
+  m <- match(ii,x)
+  
+  updateTextAreaInput(session, 'multiGeneInput', 
+                      value = paste0(x[-m], collapse = '\n'))
+  
+  
+})
+
 # returns list containing
 #   invalid gene symbols and valid ids, or NULL if nothing is entered
 getGenesFromMultiGeneInput <- function() {
@@ -75,16 +89,18 @@ validateGenes <- reactive({
   if (is.null(genes)) {
     shinyjs::disable('btnMultiGeneSearch')
     shinyjs::hide('invalidGeneOutput')
+    shinyjs::hide('btnRemoveInvalidGenes')
     output$multiInvalidGeneMsg <- renderUI({})
     return(NULL)
   }
   
   if (length(genes$invalid) > 0) {
     catn('we have invalid genes...')
-    shinyjs::html('invalid_gene_label', 'Invalid genes')
+    shinyjs::html('invalid_gene_label', 'Invalid genes will be skipped (<a href = "https://www.genenames.org/tools/multi-symbol-checker/" target = "_blank">Open HUGO</a>)')
     shinyjs::show('invalidGeneOutput')
     shinyjs::removeClass('invalid_gene_label', 'green')
     shinyjs::addClass('invalid_gene_label', 'red')
+    shinyjs::show('btnRemoveInvalidGenes')
     updateTextAreaInput(session, 'invalidGeneOutput', 
                         value = paste(genes$invalid, collapse = '\n'))
     js$setReadOnly('invalidGeneOutput')
@@ -96,6 +112,7 @@ validateGenes <- reactive({
     shinyjs::html('invalid_gene_label', 'All genes are valid')
     shinyjs::removeClass('invalid_gene_label', 'red')
     shinyjs::addClass('invalid_gene_label', 'green')
+    shinyjs::hide('btnRemoveInvalidGenes')
     
     updateTextAreaInput(session, 'invalidGeneOutput', 
                         value = '\n\nInvalid genes will be listed here')

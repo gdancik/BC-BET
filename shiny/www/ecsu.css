@@ -54,10 +54,26 @@ td {
 }
 
                   
-.blue-button {
+.blue-button, .blue-button:hover {
     background-image: linear-gradient(#04519b,#044687 60%,#033769);
     color:#FFF;
 }
+
+.blue-button:hover {
+   font-weight:bold;
+} 
+
+.red-button, .red-button:focus {
+    background-color: darkred;
+    color:#FFF;
+}
+
+.red-button:hover {
+    background-color:darkred;
+    color:white;
+    font-weight:bold;
+}
+
 
 .width100 {
     width: 100%;
