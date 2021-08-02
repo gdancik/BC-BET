@@ -68,6 +68,8 @@ userSingleGene <- list(
   h4('Select a gene'),
   HTML("<p>Note: <i>BC-BET</i> uses official gene symbols. Check your genes or lookup invalid symbols from 
              <a href = 'https://www.genenames.org/tools/multi-symbol-checker/' target = '_blank'>genenames.org</a>.</p>"),
+
+  HTML('<p>To enter multiple genes, scroll down or click <a href = "#multi-section">here</a>.'),
   
   fluidRow(
     column(3,
@@ -87,7 +89,7 @@ userSingleGene <- list(
 userGenes <- list(
   
   fluidRow(
-    h4('Select multiple genes ', style = 'padding-left:15px')
+    h4('Select multiple genes ', id = 'multi-section', style = 'padding-left:15px')
   ),
   
   fluidRow(
