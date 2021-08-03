@@ -20,13 +20,20 @@ shinyUI(
              id = "page", 
              header =  pleaseWait(),
                
-    tabPanel('Home', 
+    tabPanel('Home',
              HTML("<link href='https://fonts.googleapis.com/css?family=Courgette' rel='stylesheet' type='text/css'>"),
              HTML("<script src='bcbet.js'></script>"),
              #br(),
-             welcomePage,
-             downloadLink('downloadAllResults', 'Download')
+             div(id = 'homepage',
+              welcomePage,
+              downloadLink('downloadAllResults', 'Download')
+             )
              ),
+    
+    tabPanel('Datasets',
+             tags$iframe(style="height:600px; width:100%", src="datasets.pdf")
+             ),
+    
     tabAbout,
     
     # activate shinyJS and include CSS

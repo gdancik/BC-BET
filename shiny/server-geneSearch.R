@@ -86,13 +86,13 @@ resetResultsPage <- function(selectedGene) {
 
   # generate page header
   l <- REACTIVE_SEARCH$parameters
-  myheader <- h4('Patient Analysis for', geneHeader, 
+  myheader <- h4('Biomarker evaluation of', geneHeader, 
      span('(', 
           paste0(names(l), ': ', l, collapse = ', '), 
-          ')', style = 'font-size: 80%'),
-     style = 'margin:0px; color:darkred;')  
+          ')', style = 'font-size: 80%',
+     '(', a(id = 'return_home', 'change'), ')'
+     ), style = 'margin:0px; color:darkred;', )  
     
-
   if (length(selectedGene) == 1) {
       shinyjs::disable('btnGeneSearch')
     
@@ -135,3 +135,6 @@ toggleSurvivalPlots <- function(cutpoint) {
   f('resultsPage', 'Survival (HG/MI)')
 }
 
+shinyjs::onclick('return_home', {
+  updateNavbarPage(session, 'page', 'Home')
+})

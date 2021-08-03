@@ -22,10 +22,6 @@ get_datasets_from_results <- function() {
 
 output$downloadPage <- renderUI({
   
-  showNotification('To do: need to get relevant datasets', 
-                   type = "warning") 
-
-  
   datasets <- get_datasets_from_results()
   
   cat('\n\ndownloadPage!!!\n\n')

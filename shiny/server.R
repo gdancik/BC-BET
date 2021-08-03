@@ -9,9 +9,27 @@ library(RMariaDB)
 
 source("ui-tabResults.R")
 source("ui-tabResultsMulti.R")
+source('mongo.R')
 
 shinyServer(function(input, output, session) {
 
+  VALID_GENES <- tryCatch({
+    m <- mongo_connect('genes')
+    m$find()$genes
+  }, error = function(e) {
+    return(NULL)
+  })
+  
+  if (is.null(VALID_GENES)) {
+    catn('no mongo')
+    shinyjs::html(id = 'homepage', html = '<h2> BC-BET is temporarily unavailable</h2><p>If this message persists, contact dancikg@easternct.edu</p>')
+    shinyjs::runjs("$('#please-wait').addClass('hide');")
+    return()
+  }
+  
+  
+  
+  
   source("server-geneSearch.R", local = TRUE)
   source("server-multiGeneSearch.R", local = TRUE)
   source('server-singleGeneResults.R', local = TRUE)

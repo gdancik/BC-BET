@@ -53,8 +53,15 @@ tabAbout = tabPanel("About",
         ),
         HTML("</li>"),
         HTML("</ul>")
-    ) # end panel body
+    ), # end panel body
 
+    div(class = 'panel-heading', 
+        h3(class='panel-title', style = 'font-weight: bold', 
+           "Acknowledgements")
+    ),
+    div(class = "panel-body",
+        HTML("<i>BC-BET</i> was inspired by postdoctoral work carried out under Dan Theodorescu, MD., PhD., who is currently director of the Comprehensive Cancer Center at the Cedars-Sinai Health System in Los Angeles.")
+    )
     
   )
 )
