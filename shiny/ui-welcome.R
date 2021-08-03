@@ -107,7 +107,7 @@ userGenes <- list(
                        "text/csv",
                        "text/comma-separated-values,text/plain",
                        ".csv")
-           ),
+           ),  tags$style(HTML("#multiGeneFile {display:none;}")),
            div(class = 'nohide',
                myTextAreaInput('invalidGeneOutput',
                                label = HTML("<span id = 'invalid_gene_label'>Invalid genes </span>"),

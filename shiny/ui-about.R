@@ -13,13 +13,12 @@ tabAbout = tabPanel("About",
              "Publications")
       ),
       div(class = "panel-body",
-        HTML("If you use <i>BC-BET</i> in your work, please cite the following publication", 
-        "(<a href = 'http://biomedcentral.com/1471-2490/15/59'>link</a>):</br></br>",
-        "<ul><li>Dancik, G.M. An online tool for evaluating diagnostic and prognostic gene 
-         expression biomarkers in bladder cancer. <i>BMC Urol</i> 2015, 15:59.</li></ul>")
+        HTML("<p>If you use <i>BC-BET</i> in your work, please <span style = 'color:red'><b>cite</b></span> the following publication", 
+        "(<a href = 'http://biomedcentral.com/1471-2490/15/59'>link</a>):",
+        "<ul><li><b>Dancik, G.M. An online tool for evaluating diagnostic and prognostic gene 
+         expression biomarkers in bladder cancer. <i>BMC Urol</i> 2015, 15:59.</b></li></ul><p>")
         ),
-        
-      
+    
     ## contributors  
     div(class = 'panel-heading', 
         h3(class='panel-title', style = 'font-weight: bold', 
@@ -47,8 +46,8 @@ tabAbout = tabPanel("About",
     div(class = "panel-body",
         HTML("<ul>"),
         HTML("<li>"),
-        p(span(style='font-weight:bold', "Christopher Kelly"), "is an undergraduate Computer Science major, ", 
-          a(href = "https://easternct.edu", "Eastern Connecticut State University"), "(Wilimantic, CT).", 
+        p(span(style='font-weight:bold', "Christopher Kelly"), "graduated from ", 
+          a(href = "https://easternct.edu", "Eastern Connecticut State University"), "(Wilimantic, CT) with a B.S. in Computer Science.", 
           role("Contributor")
         ),
         HTML("</li>"),
@@ -60,7 +59,8 @@ tabAbout = tabPanel("About",
            "Acknowledgements")
     ),
     div(class = "panel-body",
-        HTML("<i>BC-BET</i> was inspired by postdoctoral work carried out under Dan Theodorescu, MD., PhD., who is currently director of the Comprehensive Cancer Center at the Cedars-Sinai Health System in Los Angeles.")
+        HTML("<p><i>BC-BET</i> was inspired by postdoctoral work carried out under <a href = 'https://bio.cedars-sinai.org/theodorescud/index.html'>Dan Theodorescu</a>, MD, PhD, who is currently director of the <a href = 'https://www.cedars-sinai.org/locations/samuel-oschin-comprehensive-cancer-institute-150.html'>Samuel Oschin Comprehensive Cancer Center</a> at the Cedars-Sinai Health System in Los Angeles.</li>",
+             "This work was supported, in part, by grants from the American Association of University Professors and Connecticut State University Board of Regents (DANR14 and YRDA01).</p>")
     )
     
   )

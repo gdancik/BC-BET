@@ -62,14 +62,6 @@ shinyServer(function(input, output, session) {
     shinyjs::onclick('link_parameters', shinyjs::toggle('div_parameters'))
   })  
 
-  
-  insertTab('page', tabResults, "Home", position = "after")
-  hideTab('page', 'Results')
-
-  insertTab('page', tabResultsMulti, "Home", select = TRUE, position = "after")
-  hideTab('page', 'MultiResults')
-  
-  
 })
 
 

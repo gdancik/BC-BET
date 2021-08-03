@@ -99,7 +99,13 @@ resetResultsPage <- function(selectedGene) {
       # adding/removing tabs causes issues with a blue line;
       # let's hide/show and insert tabs in server.R
       hideTab('page', 'MultiResults')
-      showTab('page', 'Results') 
+      
+      if (!GLOBAL$insertSingle) {
+        insertTab('page', tabResults, "Home", position = "after")
+        setGLOBAL('insertSingle', TRUE)
+      } else {
+        showTab('page', 'Results') 
+      }
       
       getSingleGeneResults()
       output$ResultsHeader <- renderUI({
@@ -111,10 +117,18 @@ resetResultsPage <- function(selectedGene) {
       updateTabsetPanel(session, 'page', selected = 'Results')
   } else {
       hideTab('page', 'Results')
-      showTab('page', 'MultiResults')
+    
+    if (!GLOBAL$insertMulti) {      
+      insertTab('page', tabResultsMulti, "Home", select = TRUE, position = "after")
+      setGLOBAL('insertMulti', TRUE)
+    } else {
+      showTab('page', 'MultiResults') 
+    }
+    
       output$MultiResultsHeader <- renderUI({
         myheader
       })
+      
       catn('multi gene results!')
       getMultiGeneResults()
       updateTabsetPanel(session, 'page', selected = 'MultiResults')

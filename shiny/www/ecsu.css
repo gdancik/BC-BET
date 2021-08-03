@@ -53,6 +53,12 @@ td {
     /*font-color: green;*/
 }
 
+.panel-heading {
+    background-image: linear-gradient(#04519b,#044687 60%,#033769);
+}
+.panel-title {
+    color: white
+}
                   
 .blue-button, .blue-button:hover {
     background-image: linear-gradient(#04519b,#044687 60%,#033769);

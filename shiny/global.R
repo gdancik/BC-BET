@@ -3,7 +3,9 @@ GLOBAL <- list(#gene = NULL, geneResults = NULL,
                submitType = 'qry', 
                DEBUG = TRUE,
                TEST = FALSE,
-               url_params = 'page')
+               url_params = 'page',
+               insertSingle = FALSE,
+               insertMulti = FALSE)
 
 resetGLOBAL <- function() {
   #setGLOBAL('gene', NULL)
@@ -13,8 +15,8 @@ resetGLOBAL <- function() {
 }
 
 setGLOBAL <- function(name, x) {
-  valid <- c('gene','submitType', 'url_params', 'geneResults')
-  valid <- c('submitType', 'url_params')
+  #valid <- c('gene','submitType', 'url_params', 'geneResults')
+  valid <- c('submitType', 'url_params', 'insertSingle', 'insertMulti')
   if (!name %in% valid) {
     stop('invalid name argument: ', name)
   }
