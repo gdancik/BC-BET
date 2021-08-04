@@ -1,0 +1,5 @@
+# run ./docker-build to build bcbet-ui image
+
+cd ../shiny/
+docker build -f ../docker/Dockerfile -t gdancik/bcbet-ui .
+

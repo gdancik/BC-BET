@@ -5,8 +5,6 @@ library(ggplot2)
 library(DT)
 library(pheatmap)
 
-library(RMariaDB)
-
 source("ui-tabResults.R")
 source("ui-tabResultsMulti.R")
 source('mongo.R')
@@ -21,7 +19,6 @@ shinyServer(function(input, output, session) {
   })
   
   if (is.null(VALID_GENES)) {
-    catn('no mongo')
     shinyjs::html(id = 'homepage', html = '<h2> BC-BET is temporarily unavailable</h2><p>If this message persists, contact dancikg@easternct.edu</p>')
     shinyjs::runjs("$('#please-wait').addClass('hide');")
     return()
