@@ -1,6 +1,11 @@
 library(mongolite)
+
+if (is.null(getOption('mongo.host'))) {
+        options(mongo.host = "0.0.0.0:2000")
+}
+
 mongo_connect <- function(collection, user = "root", pass = "password",
-                          host = "0.0.0.0:2000") {
+                          host = getOption('mongo.host')) {
   # Using plain-text
   URI = sprintf("mongodb://%s:%s@%s/", user, pass, host)
   mongo(url = URI, collection = collection, db = 'bcbet')
