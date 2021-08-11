@@ -2,4 +2,6 @@
 
 cd ../shiny/
 docker build -f ../docker/Dockerfile -t gdancik/bcbet-ui .
+echo
+echo "Created gdancik/bcbet-ui; you may now push to docker hub"
 
