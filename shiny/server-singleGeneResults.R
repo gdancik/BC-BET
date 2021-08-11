@@ -70,6 +70,7 @@ getSingleGeneResults <- reactive({
 
   # get DE results  
   res1 <- mongo_get_de_results(qry, c(REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue)) 
+
   res1 <- lapply(res1, arrange, dataset)
   res1 <- lapply(res1, summarize_de, 
                  fc_col = REACTIVE_SEARCH$parameters$measure, 
@@ -79,10 +80,11 @@ getSingleGeneResults <- reactive({
   
   cutpoint <- REACTIVE_SEARCH$parameters$cutpoint
   
+  catn('getting survival data...')
   res2 <- mongo_get_survival_results(qry, cutpoint,
                                      REACTIVE_SEARCH$parameters$endpoint,
                                      REACTIVE_SEARCH$parameters$treated) 
-  
+
   res2 <- lapply(res2, summarize_de, 
                  fc_col = paste0('hr_', cutpoint), 
                  p_col = paste0('p_', cutpoint),
@@ -138,6 +140,8 @@ getSingleGeneResults <- reactive({
   REACTIVE_SEARCH$results_de <- res1
   REACTIVE_SEARCH$results_survival <- res2
   
+  #save(res1, res2, file = 'results.RData')
+  
 })
 
 bcbet_column_names <- function() {
@@ -158,8 +162,13 @@ bcbet_column_names <- function() {
 }
 
 render_de_table <- function(x, gene, var_type) {
+  
   if (is.null(x)) {
-    return(renderTable(NULL))
+    return(DT::renderDataTable({
+      DT::datatable(data.frame(results = integer()), colnames = NULL,
+                         options = list(paging = FALSE))
+      })
+    )
   }
   
   filename <- paste0('bcbet_', gene, '_', var_type)
@@ -247,7 +256,28 @@ observe({
 
 generate_summary_plot <- function(df, labels, title) {
 
-# melt the data to create data frame of counts
+  if (nrow(df) == 0) {
+    
+   df <- data.frame(x = rep(1,5), value = rep(-.1,5), category = factor(1:5))
+    
+    
+    g1 <- ggplot(df, aes(x = x, y = value, fill = category)) + geom_col(color = 'black') + 
+      theme_linedraw() + 
+      ggtitle(title)  +
+      theme(axis.text =  element_blank()) +
+      coord_cartesian(ylim=c(1, 2), xlim = c(0,1)) +
+      annotate(geom = "label", x = .5, y = 1.5, label = 'No data available') +
+      labs(x = '', y = '') +
+      scale_fill_manual(values = c('darkred', 'pink', 'lightblue', 'darkblue', 'white'),
+                        labels = labels) 
+    return(g1)
+  }
+  
+  
+  
+#save(df, labels, title, file = 'summary.RData')
+
+  # melt the data to create data frame of counts
 # arrange (order) by category (plotted with
 # 'a' on the top and 'd' on the bottom), and
 # add the label_position and number of datasets
@@ -293,6 +323,8 @@ output$plotSummary <- renderPlot({
   df <- sapply(REACTIVE_SEARCH$results_survival, function(x) table(x$category)) %>% data.frame()
   df$category <- rownames(df)
   g2 <- generate_summary_plot(df, labels, title)
+  
+  #save(g1,g2, file = 'summary_plots.RData')
   
   plot_grid(g1,g2,nrow = 2)
   

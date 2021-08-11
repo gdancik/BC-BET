@@ -95,7 +95,7 @@ userGenes <- list(
   fluidRow(
     column(3,
            textAreaInput('multiGeneInput', label = HTML('Enter up to 500 genes (<a id = "loadExampleLink" href = "#" class = "action-button">Example</a>)'),
-                         value = "cd24\nfgfr3\nhras",
+                         value = "", #"cd24\nfgfr3\nhras",
                          placeholder = 'Enter multiple genes, separated by spaces or one per line', 
                          rows = 10, resize = "none"),
            bsTooltip('loadExampleLink', placement = 'top',

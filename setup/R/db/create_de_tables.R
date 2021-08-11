@@ -280,6 +280,9 @@ for (ds in datasets) {
         }
         rownames(res.df) <- NULL
       
+        res.df$hr_med[is.na(res.df$hr_med)] <- 1
+        
+        
         cat('  adding results to mongo ...\n')
         m <- mongo_connect(survival_table)
         m$insert(data.frame(res.df))

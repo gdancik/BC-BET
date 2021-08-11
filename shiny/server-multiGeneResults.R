@@ -31,18 +31,22 @@ getMultiGeneResults <- reactive({
   }
   
   res1 <- remove_null(res1)
+  res1 <- lapply(res1, reformat_multigene_results)
+  res1 <- lapply(res1, summarize_multi_results_de, REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue)
+  
   res2 <- remove_null(res2)
   
-  res1 <- lapply(res1, reformat_multigene_results)
-  res2 <- lapply(res2, reformat_multigene_results)
+  if (length(res2) != 0) {
+    res2 <- lapply(res2, reformat_multigene_results)
+    res2 <- lapply(res2, summarize_multi_results_survival, REACTIVE_SEARCH$parameters$cutpoint)
+  }
   
-  res1 <- lapply(res1, summarize_multi_results_de, REACTIVE_SEARCH$parameters$measure, REACTIVE_SEARCH$parameters$pvalue)
-  res2 <- lapply(res2, summarize_multi_results_survival, REACTIVE_SEARCH$parameters$cutpoint)
-    
   REACTIVE_SEARCH$results_de <- res1
   REACTIVE_SEARCH$results_survival <- res2
   
+  #save(res1, res2, file = 'multiResults.RData')
   
+  updateTabsetPanel(session, 'multiResultsPage', selected = 'Summary Heatmap')
   displayMultiResultsTable('Tumor')
   
   output$heatmap <- renderPlot({
@@ -51,13 +55,17 @@ getMultiGeneResults <- reactive({
     generate_heatmap(REACTIVE_SEARCH$results_de,  REACTIVE_SEARCH$results_survival)
   })
   
-  save(res1, res2, file = 'multiResults.RData')
+ 
 })
 
 
 # takes a multigene results data frame with a dataset column
 # and reformats with columns ds1-measure, ds1-pvalue, ds2-measure, etc
 reformat_multigene_results <- function(res1) {
+  
+  if (is.null(res1)) {
+    return(res1)
+  }
   
   res1 <- ungroup(res1)
   
@@ -124,7 +132,7 @@ summarize_multi_results_de <- function(r1, measure, pvalue) {
   measure_threshold <- 1
   if (measure == 'auc') measure_threshold <- 0.50
  
-  calc_scores(r1, r1[,m1], r1[,m2], measure_threshold) 
+  calc_scores(r1, r1[,m1, drop = FALSE], r1[,m2, drop = FALSE], measure_threshold) 
   
 }
 
@@ -136,7 +144,7 @@ summarize_multi_results_survival <- function(r1, cutpoint) {
   m1 <- match(paste0(ds, '_hr_', cutpoint), columns)
   m2 <- match(paste0(ds, '_p_', cutpoint), columns)
 
-  calc_scores(r1, r1[,m1], r1[,m2], 0.5) 
+  calc_scores(r1, r1[,m1, drop = FALSE], r1[,m2, drop = FALSE], 0.5) 
 }
 
 # calculate score based on vectors 'measures' and 'ps', and
@@ -255,10 +263,12 @@ generate_heatmap <- function(res1, res2) {
     x <- full_join(x, l1[[i]])
   }
 
-  # add survival, lg_nmi_survival, and hg_mi_survival
-  l2 <- lapply(1:length(res2), format_for_heatmap, res2)
-  for (i in 1:length(l2)) {
-    x <- full_join(x, l2[[i]])
+  if (length(res2) > 0) {
+    # add survival, lg_nmi_survival, and hg_mi_survival
+    l2 <- lapply(1:length(res2), format_for_heatmap, res2)
+    for (i in 1:length(l2)) {
+      x <- full_join(x, l2[[i]])
+    }
   }
 
   rownames(x) <- x$gene
@@ -269,8 +279,13 @@ generate_heatmap <- function(res1, res2) {
     x <- dplyr::arrange(x, desc(mm)) %>% slice_head(n=100)
   }
   
-  ds_scale <- c(sapply(1:length(res1), num_ds_for_heatmap, res1),
-              sapply(1:length(res2), num_ds_for_heatmap, res2))
+  ds_scale1 <- c(sapply(1:length(res1), num_ds_for_heatmap, res1))
+  ds_scale2 <- NULL
+  if (length(res2) > 0) {
+    ds_scale2 <- sapply(1:length(res2), num_ds_for_heatmap, res2) 
+  }
+              
+  ds_scale <- c(ds_scale1, ds_scale2)
 
   colors <- colorRampPalette(rev(c('darkred', 'pink', 'white', 'blue', 'darkblue')))(100)
 

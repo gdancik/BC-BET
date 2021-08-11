@@ -1,11 +1,12 @@
 # global variables and functions
+
 GLOBAL <- list(#gene = NULL, geneResults = NULL,
-               submitType = 'qry', 
-               DEBUG = TRUE,
-               TEST = FALSE,
-               url_params = 'page',
-               insertSingle = FALSE,
-               insertMulti = FALSE)
+  submitType = 'qry', 
+  DEBUG = TRUE,
+  TEST = FALSE,
+  url_params = 'page',
+  insertSingle = FALSE,
+  insertMulti = FALSE)
 
 resetGLOBAL <- function() {
   #setGLOBAL('gene', NULL)

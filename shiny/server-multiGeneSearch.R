@@ -32,6 +32,12 @@ observeEvent(input$btnMultiGeneSearch,{
                          selected = selected, server = TRUE)
   }
   
+  # reset single gene search
+  updateSelectizeInput(session, 'geneInput', choices = VALID_GENES, 
+                       selected = character(0), server = TRUE,
+                       options = list(maxOptions = 20, placeholder = 'type any gene...')
+  )
+  
   # from server-geneSearch
   resetResultsPage(selected)
   

@@ -19,7 +19,12 @@ singleGeneSettings <- reactive({
 observe({
   catn('\nobserveEvent geneInput...')
   
+  catn('insert = ', GLOBAL$insertSingle)
+  
   settings <- singleGeneSettings()
+  
+  print(settings)
+  
   if (is.null(settings$geneInput) || identical(settings$geneInput, '')) {
     shinyjs::disable('btnGeneSearch')
     return()
@@ -101,9 +106,11 @@ resetResultsPage <- function(selectedGene) {
       hideTab('page', 'MultiResults')
       
       if (!GLOBAL$insertSingle) {
+        catn('inserting single results page')
         insertTab('page', tabResults, "Home", position = "after")
         setGLOBAL('insertSingle', TRUE)
       } else {
+        catn('showing results page')
         showTab('page', 'Results') 
       }
       

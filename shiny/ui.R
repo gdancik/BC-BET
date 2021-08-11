@@ -15,7 +15,7 @@ function(request) {
 
 shinyUI(
   
-    navbarPage(title = HTML('<a style = "color:white" href = "/">BC-BET</a>'),
+    navbarPage(title = HTML('<a style = "color:white" href = "/app/BCBET">BC-BET</a>'),
              windowTitle = "Bladder Cancer Biomarker Evaluation Tool",
              id = "page", 
              header =  pleaseWait(),

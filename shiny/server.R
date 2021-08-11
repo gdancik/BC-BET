@@ -11,6 +11,16 @@ source('mongo.R')
 
 shinyServer(function(input, output, session) {
 
+  # include this here because shinyServer gets run on page refresh,
+  # and these need to be reset
+  
+  setGLOBAL('insertSingle', FALSE)
+  setGLOBAL('insertMulti', FALSE)
+  
+  
+  removeTab('page', 'MultiResults')
+  removeTab('page', 'Results')
+  
   VALID_GENES <- tryCatch({
     m <- mongo_connect('genes')
     m$find()$genes
@@ -51,8 +61,9 @@ shinyServer(function(input, output, session) {
   
   
   updateSelectizeInput(session, 'geneInput', choices = VALID_GENES, 
-                       selected = 'FGFR3', server = TRUE,
-                       options = list(maxOptions = 20)) 
+                       selected = character(0), server = TRUE,
+                       options = list(maxOptions = 20, placeholder = 'Enter any gene...')
+                       ) 
   
 
   observe({

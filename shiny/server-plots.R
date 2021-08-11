@@ -18,7 +18,7 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL, trea
   
   HG_MI_COHORTS <- c('mda1', 'mda2')
   
-  if (ds %in% HG_MI_COHORTS && !is.null(plotType) && plotType != 'survival_hg_mi') {
+  if (ds %in% HG_MI_COHORTS && !is.null(plotType) && plotType %in% c('survival', 'survival_lg_nmi')) {
       return(NULL)
   }
   
@@ -194,22 +194,6 @@ generatePlots <- function(plotType, graphOutputId) {
   # may need to alter this for multi-gene input. 
   gene <- REACTIVE_SEARCH$gene
   
-  # # get datasets (we may want to get this from mysql results)
-  # m <- mongo_connect('mskcc_clinical')
-  # command <- paste0('{"listCollections":1, ',
-  #                   '"filter": {"name": {"$regex": "expr", "$options":""}},',
-  #                   '"nameOnly": "true" }')
-  # 
-  # collections <- m$run(command)
-  # 
-  # if (collections$ok != 1) {
-  #   message('Could not get collections')
-  #   return()
-  # }
-  # 
-  # datasets <- gsub('_.*$', '', collections$cursor$firstBatch$name)
-  # datasets <- sort(datasets)
-  
   if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
     results <- REACTIVE_SEARCH$results_survival[[plotType]]
     treated <- REACTIVE_SEARCH$parameters$treated
@@ -218,7 +202,13 @@ generatePlots <- function(plotType, graphOutputId) {
     treated <- NULL
   }
   
-  if (nrow(results) == 0) {
+  if (is.null(results) || nrow(results) == 0) {
+    
+    output[[graphOutputId]] <- renderUI({
+        h4(style = "margin-left:15px;color:maroon;", 'No data available')
+    })
+    shinyjs::runjs("$('#please-wait').addClass('hide');")
+    
     return(NULL)
   }
   
@@ -261,6 +251,8 @@ generatePlots <- function(plotType, graphOutputId) {
         '  columns: ', columns, "\n",
         '  plotType: ', plotType, "\n",
         '  treated: ', treated, '\n')
+    
+    #save(ds, qry, columns, plotType, treated, results, i, file = 'checkplot.RData')
     
     df <- get_mongo_df(ds, qry, columns, plotType, treated = treated)
     

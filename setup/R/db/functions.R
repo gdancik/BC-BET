@@ -1,4 +1,5 @@
 library(survival)
+library(dplyr)
 
 #' Carries out a two-sample t-test for vector 'x'
 #'

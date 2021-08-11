@@ -22,6 +22,12 @@ mongo_get_de_results <- function(qry, cols) {
                      '}')
     m$find(qry, fields = fields)
   }, qry = qry, cols = cols, USE.NAMES = TRUE, simplify = FALSE)
+  
+  for (n in names(res1)) {
+    if (nrow(res1[[n]]) == 0) {
+      res1[[n]] <- NULL
+    }
+  }
   res1
 }
 
@@ -46,6 +52,12 @@ mongo_get_survival_results <- function(qry, cutpoint, endpoint, treated) {
     m$find(qry, fields = fields)
   }, qry = qry, cutpoint = cutpoint, treated_qry = treated_qry, USE.NAMES = TRUE, simplify = FALSE)
 
+  
+  for (n in names(res2)) {
+    if (nrow(res2[[n]]) == 0) {
+      res2[[n]] <- NULL
+    }
+  }
 
   res2 <- lapply(res2, arrange, dataset)
   res2 <- lapply(res2, get_endpoint, endpt = endpoint)
