@@ -13,7 +13,7 @@ file_expr <- paste0('../../data/processed/', ds_name, '.RData')
 file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # get expression and pheno data
-GSE48276 <- getGEO("GSE48276")
+GSE48276 <- getGEO("GSE48276", getGPL = PROCESS_EXPRESSION)
 p <- pData(GSE48276[[1]])
 
 if (PROCESS_EXPRESSION) {

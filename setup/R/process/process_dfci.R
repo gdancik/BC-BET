@@ -15,7 +15,7 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # load expression and platform data
 
-dfci <- getGEO('GSE31684')
+dfci <- getGEO('GSE31684', getGPL = PROCESS_EXPRESSION)
 #View(dfci)
 
 if (PROCESS_EXPRESSION) {
@@ -58,8 +58,36 @@ dfci.grade = rep(NA, nrow(GSE31684.p))
 dfci.grade[GSE31684.p$characteristics_ch1.7 == "rc grade: Low"] <- "lg"
 dfci.grade[GSE31684.p$characteristics_ch1.7 == "rc grade: High"] <- "hg"
 
+time <- outcome <- rep(NA, nrow(GSE31684.p))
+
+for (col in paste0('characteristics_ch1.', 17:20)) {
+  g <- grep('recurrence free', GSE31684.p[[col]])
+  time[g] <- GSE31684.p[[col]][g]
+  
+  g <- grep('recurrence/dod', GSE31684.p[[col]])
+  outcome[g] <- GSE31684.p[[col]][g]
+  
+}
+
+myoutcome <- rep(NA, length(outcome))
+myoutcome[outcome%in%"recurrence/dod: No"] <- 0
+myoutcome[outcome%in%"recurrence/dod: Yes"] <- 1
+mytime <- as.double(gsub('recurrence free survival months (distant and local): ', '', time, fixed = TRUE))
+
+
+omit <- GSE31684.p$characteristics_ch1.14 == 'prerc_chemo: Yes'
+
+mytime[omit] <- NA
+myoutcome[omit] <- NA
+
+treated <- as.integer(GSE31684.p$characteristics_ch1.15 == 'post rc_chemo: Yes')
+
 # create clinical data table
-dfci_clinical <- create_clinical_table(id = rownames(GSE31684.p), grade = dfci.grade, stage = dfci.stage)
+dfci_clinical <- create_clinical_table(id = rownames(GSE31684.p), grade = dfci.grade, 
+                                       stage = dfci.stage, 
+                                       treated = treated,
+                                       rfs_time = mytime,
+                                       rfs_outcome = myoutcome)
 
 #View(dfci_clinical)
 

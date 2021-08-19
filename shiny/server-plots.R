@@ -11,12 +11,23 @@ source('mongo.R')
 
 # returns a data frame combining expression with 
 # clinical data specified by 'clin_column', e.g., 'stage'.
-get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
+#   - plotType only used for 'survival_lg_nmi' or 'survival_hg_mi'
+#   - if treated is 'no', we filter df to remove treated
+
+get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL, treated = NULL) {
+  
+  HG_MI_COHORTS <- c('mda1', 'mda2')
+  
+  if (ds %in% HG_MI_COHORTS && !is.null(plotType) && plotType %in% c('survival', 'survival_lg_nmi')) {
+      return(NULL)
+  }
+  
   m <- mongo_connect(paste0(ds, '_expr'))
   x <- m$find(gene_qry)
   m <- mongo_connect(paste0(ds, '_clinical'))
   y <- m$find()
   
+  # if no clin_column is specified, return all data
   if (is.null(clin_column)) {
     
     if (!is.null(plotType)) {
@@ -27,15 +38,23 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
     return(df)
   } 
   
-  if (length(x$expr[[1]]) == 0 || any(!clin_column%in%colnames(y))) {
+  check_cols <- setdiff(clin_column, 'treated')
+  if (length(x$expr[[1]]) == 0 || any(!check_cols%in%colnames(y))) {
     return(NULL)
   }
   
   keep <- NULL
+  
+  
   if (plotType == 'survival_lg_nmi') {
     keep <- y$grade %in% 'lg' & y$stage %in% 'nmi'
   } else if (plotType == 'survival_hg_mi') {
-    keep <- y$grade %in% 'hg' & y$stage %in% 'mi'
+    
+    if (ds %in% HG_MI_COHORTS) {
+      keep <- NULL
+    } else {
+      keep <- y$grade %in% 'hg' & y$stage %in% 'mi'
+    }
   }
   
   if (!is.null(keep) && sum(keep,na.rm=TRUE) < 10) {
@@ -48,6 +67,11 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
     df <- data.frame(x = x$expr[[1]],
                      y1 = y[,clin_column[1]],
                      y2 = y[,clin_column[2]])
+    
+    if (!is.null(y$treated) && treated == 'no') {
+      df <- df[y$treated == 0,]
+    }
+    
   }
 
   if (!is.null(keep)) {
@@ -58,16 +82,20 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL) {
     
 }
 
-bcbet_boxplot <- function(df,ds, measure, p, reverse = FALSE, upper = TRUE) {
+bcbet_boxplot <- function(df,ds, measure_name, measure, p, reverse = FALSE, upper = TRUE) {
 
-  p <- round(p)
+  p <- round(p, 2)
   if (p < 0.01) {
     p <- 'P < 0.01'
   } else {
     p <- paste0('P = ', p)
   }
   
-  measure <- paste0('FC = ', round(measure, 2))
+  if (measure_name == 'fc') {
+    measure <- paste0('FC = ', round(measure, 2))
+  } else {
+    measure <- paste0('AUC = ', round(measure, 2))
+  }
   
   
   title <- paste0(ds, '\n', measure, ' (', p, ')')
@@ -95,7 +123,7 @@ bcbet_boxplot <- function(df,ds, measure, p, reverse = FALSE, upper = TRUE) {
   
 }
 
-bcbet_km <- function(df, ds, hr, p) {
+bcbet_km <- function(df, ds, hr, p, endpoint) {
   
   p <- round(p,3)
   if (p < 0.01) {
@@ -106,24 +134,45 @@ bcbet_km <- function(df, ds, hr, p) {
   
   hr <- paste0('HR = ', round(hr, 2))
   title <- paste0(ds, '\n', hr, ' (', p, ')')
-  
-  
+
   cut = median(df$x)
   upper = "upper 50%"; lower = "lower 50%"
   
   ## split into high and low groups using appropriate cutoff ## 
-  df$expression <- factor(df$x >= median(df$x), labels = c(lower,upper))
+  
+  risk <- try(factor(df$x >= median(df$x), labels = c(lower,upper)),
+           silent = TRUE)
+
+  if (class(t) != 'try-error') {
+    df$expression <- risk
+  } else {
+    df$expression <- 1
+  }
   
   ## plot graph ### ggplot2/GGally form
   km.group1 = survfit(Surv(y1, y2) ~ expression, data = df)
-  col <- c('darkblue', 'darkred')
+    
+  if(class(risk) == 'try-error') {
+    
+    g1 <- ggsurv(km.group1, lty.est = 0, cens.size = 0, plot.cens = FALSE, 
+           CI = FALSE) +
+      annotate('text', x = 0.5*(min(df$y1,na.rm=TRUE) + max(df$y1,na.rm=TRUE)),
+               y = .55, label = 'Expression >= median\nfor all samples') +
+      labs(x = 'Time (months)', 
+           y = paste0('Survival (', endpoint, ') probability')) + 
+      ggtitle(title) + ylim(c(0,1)) + theme_classic()
   
+    return(g1)
+  }
+  
+  col <- c('darkblue', 'darkred')
   ggsurv(km.group1, 
                     main = ds, 
                     surv.col = col, cens.col = col,
                     size.est = 1) +
     ggplot2::coord_cartesian(ylim = c(0, 1)) + theme_classic() +
-    labs(x = 'Time (months)', ylab = 'Survival probability') + ggtitle(title)
+    labs(x = 'Time (months)', 
+         y = paste0('Survival (', endpoint, ') probability')) + ggtitle(title)
     
 }
 
@@ -143,31 +192,23 @@ generatePlots <- function(plotType, graphOutputId) {
   plot_prefix <- paste0('plot_', plotType)
   
   # may need to alter this for multi-gene input. 
-  gene <- input$geneInput
-  
-  # # get datasets (we may want to get this from mysql results)
-  # m <- mongo_connect('mskcc_clinical')
-  # command <- paste0('{"listCollections":1, ',
-  #                   '"filter": {"name": {"$regex": "expr", "$options":""}},',
-  #                   '"nameOnly": "true" }')
-  # 
-  # collections <- m$run(command)
-  # 
-  # if (collections$ok != 1) {
-  #   message('Could not get collections')
-  #   return()
-  # }
-  # 
-  # datasets <- gsub('_.*$', '', collections$cursor$firstBatch$name)
-  # datasets <- sort(datasets)
+  gene <- REACTIVE_SEARCH$gene
   
   if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
     results <- REACTIVE_SEARCH$results_survival[[plotType]]
+    treated <- REACTIVE_SEARCH$parameters$treated
   } else {
     results <- REACTIVE_SEARCH$results_de[[plotType]]
+    treated <- NULL
   }
   
-  if (nrow(results) == 0) {
+  if (is.null(results) || nrow(results) == 0) {
+    
+    output[[graphOutputId]] <- renderUI({
+        h4(style = "margin-left:15px;color:maroon;", 'No data available')
+    })
+    shinyjs::runjs("$('#please-wait').addClass('hide');")
+    
     return(NULL)
   }
   
@@ -192,22 +233,28 @@ generatePlots <- function(plotType, graphOutputId) {
     
     columns <- plotType
     if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
-      columns <- c('ba_time', 'ba_outcome')
+      columns <- paste0(REACTIVE_SEARCH$parameters$endpoint, c('_time', '_outcome'))
+      columns <- c(columns, 'treated')
+      
       measure <- results$hr_med[i]
       p <- results$p_med[i]
+      endpoint <- results$endpoint[i]
     } else {
-      measure <- results$fc[i]
-      p <- results$pt[i]
+      measure <- results[[REACTIVE_SEARCH$parameters$measure]][i]
+      p <- results[[REACTIVE_SEARCH$parameters$pvalue]][i]
     }
     
     ds <- results$dataset[i]
     
 
-    cat("getting data for: ", ds, "...\n")
-    df <- get_mongo_df(ds, qry, columns, plotType)
+    cat("getting data for: ", ds, "\n",
+        '  columns: ', columns, "\n",
+        '  plotType: ', plotType, "\n",
+        '  treated: ', treated, '\n')
     
+    #save(ds, qry, columns, plotType, treated, results, i, file = 'checkplot.RData')
     
-    
+    df <- get_mongo_df(ds, qry, columns, plotType, treated = treated)
     
     if (is.null(df) || nrow(df) == 0) {
       catn('skipping ', df, ' ...')
@@ -222,9 +269,10 @@ generatePlots <- function(plotType, graphOutputId) {
     
     if (plotType %in% c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
       cat('  assigning plot to myplots')
-      myplots[[count]] <- bcbet_km(df, ds, measure, p)
+      myplots[[count]] <- bcbet_km(df, ds, measure, p, REACTIVE_SEARCH$parameters$endpoint)
     } else {
-      myplots[[count]] <- bcbet_boxplot(df, ds, measure, p, upper = upper, reverse = reverse)
+      
+      myplots[[count]] <- bcbet_boxplot(df, ds, REACTIVE_SEARCH$parameters$measure, measure, p, upper = upper, reverse = reverse)
     }
     
     count <- count + 1
@@ -287,27 +335,27 @@ survivalPlotsHGMI <- reactive({
 
 observeEvent(list(input$resultsPage, input$plotsPage), {
   
-  if (input$resultsPage != "Plots") {
-    return()
-  }
-  
+  # if (input$resultsPage != "Plots") {
+  #   return()
+  # }
+  # 
   
   catn('generating plots for: ', input$plotsPage)
   
-  if (input$plotsPage == 'Tumor') {
+  if (input$resultsPage == 'Tumor') {
     tumorPlots()
     return()
-  } else if (input$plotsPage == 'Grade') {
+  } else if (input$resultsPage == 'Grade') {
     gradePlots()
     return()
-  } else if (input$plotsPage == 'Stage') {
+  } else if (input$resultsPage == 'Stage') {
     stagePlots()
     return()
-  } else if (input$plotsPage == 'Survival') {
+  } else if (input$resultsPage == 'Survival') {
     survivalPlots()
-  } else if (input$plotsPage == 'Survival (LG/NMI)') {
+  } else if (input$resultsPage == 'Survival (LG/NMI)') {
     survivalPlotsLGNMI()
-  } else if (input$plotsPage == 'Survival (HG/MI)') {
+  } else if (input$resultsPage == 'Survival (HG/MI)') {
     survivalPlotsHGMI()
   }
   

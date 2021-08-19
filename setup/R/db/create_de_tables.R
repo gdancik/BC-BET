@@ -7,11 +7,14 @@ suppressPackageStartupMessages(library(AUC))
 #   (https://github.com/gdancik/lamp-rm)
 ####################################################################
 
+# Note: this needs to be consistent with /shiny/
+HG_MI_COHORTS <- c('mda1','mda2')
+
 source('functions.R')
 
 library(argparse)
 parser <- ArgumentParser(description = paste0("Creates BC-BET mongo database. ",
-                                              "NOTE: writing expression data will delete corresponding result data")
+                                              "NOTE: writing expression data will delete corresponding result data and update the stats")
 )
 
 parser$add_argument("--datasets", default="all",
@@ -42,13 +45,13 @@ for (p in c('drop', 'replace', 'expression', 'survival')) {
   }
 }
 
-if (args$var == 'none' && args$survival == 'no') {
-  stop('var cannot be none when survival is no')
-}
+# if (args$var == 'none' && args$survival == 'no') {
+#   stop('var cannot be none when survival is no')
+# }
 
-if (args$expression == "yes" && args$var != "all") {
-  stop("var must be 'all' when mongo is 'yes'")
-}
+# if (args$expression == "yes" && args$var != "all") {
+#   stop("var must be 'all' when expression is 'yes'")
+# }
 
 # set up drop/replace:
 # - if we are dropping DE tables, don't replace the data
@@ -130,15 +133,6 @@ survival_columns <- function(type) {
 # res_km <- coxph_test(X[1:100,], Y[[v2$times]], Y[[v2$outcomes]])
 
 
-#############################################################################
-# Connect to Database 
-#############################################################################
-
-#############################################################################
-# Create tables if they do not exist
-#############################################################################
-
-
 survival_variables <- NULL
 if (args$surv == "yes") {
   survival_variables <- c('dss', 'os', 'rfs')
@@ -186,6 +180,7 @@ for (ds in datasets) {
   if (args$expression == "yes") {
     cat('  adding ', ds, ' data to mongo...\n')
     addMongoData(ds, DS)
+    get_stats(ds, DS$Y, HG_MI_COHORTS)
   }
   
   X <- DS$X
@@ -213,7 +208,6 @@ for (ds in datasets) {
     
   } # end loop for de_variables
   
-  
   # handle survival if necessary
   if (args$surv == 'no') {
     next
@@ -221,61 +215,83 @@ for (ds in datasets) {
   
   for (survival_table in c('survival', 'survival_lg_nmi', 'survival_hg_mi')) {
 
-    ba_added <- FALSE
     for (v in survival_variables) {
-      if (replace_or_skip(con, args$replace, ds, survival_table, v) == 'skip') {
-        next
+      
+      for (treated in c('include', 'remove')) {
+        myds <- ds
+        
+        if (treated == 'remove') {
+          if (is.null(Y$treated)) {
+            next
+          }
+         # myds <- paste0(myds, '_no_treated')
+        }
+        
+        if (treated == 'include' && replace_or_skip(con, args$replace, myds, survival_table, v) == 'skip') {
+          next
+        }
+        
+        # skip HG_MI_COHORTS if we are looking at survival or lg_nmi
+        if (ds %in% HG_MI_COHORTS &&
+            survival_table %in% c('survival', 'survival_lg_nmi')) {
+          next
+        }
+        
+        vs <- survival_columns(v)
+        if (is.null(Y[[vs$times]])) {
+          next
+        }
+        
+        cat('  survival analysis for ',myds,':',v,':',survival_table,'\n')
+        
+        if (survival_table == 'survival') {
+          keep <- 1:nrow(Y)
+        } else if (survival_table == 'survival_lg_nmi') {
+          keep <- Y$grade == 'lg' & Y$stage == 'nmi'
+        } else if (survival_table == 'survival_hg_mi') {
+          if (ds %in% HG_MI_COHORTS) {
+            keep <- 1:nrow(Y)
+          } else {
+            keep <- Y$grade == 'hg' & Y$stage == 'mi'
+          }
+        } else {
+          stop('invalid survival_table: ', survival_table)
+        }
+        
+        if (treated == 'remove') {
+          keep <- keep & Y$treated
+        }
+        
+        t <- table(Y[[vs$outcome]][keep])
+        
+        # currently skip if n < 10 or more than 90% of patients are censured
+        if (sum(t) < 10 || proportions(t)['0'] > 0.90) {
+          cat('  insufficient samples for ',myds,' (',survival_table,') -- skipping\n')
+          next
+        }
+        
+        res <-coxph_test(X[, keep], Y[[vs$times]][keep], Y[[vs$outcomes]][keep])
+        gene <- row.names(res)
+        
+        if (!is.null(Y$treated)) {
+          res.df <- data.frame(gene, dataset = myds, treated = treated, endpoint = v, res)
+        } else {
+          res.df <- data.frame(gene, dataset = myds, endpoint = v, res)
+        }
+        rownames(res.df) <- NULL
+      
+        res.df$hr_med[is.na(res.df$hr_med)] <- 1
+        
+        
+        cat('  adding results to mongo ...\n')
+        m <- mongo_connect(survival_table)
+        m$insert(data.frame(res.df))
+        m$disconnect(gc = FALSE)
       }
-      
-      vs <- survival_columns(v)
-      if (is.null(Y[[vs$times]])) {
-        next
-      }
-      
-      cat('  survival analysis for ', ds, ':', v, ':', survival_table, '\n')
-
-      if (survival_table == 'survival') {      
-        keep <- 1:nrow(Y)
-      } else if (survival_table == 'survival_lg_nmi') {
-        keep <- Y$grade == 'lg' & Y$stage == 'nmi'
-      } else if (survival_table == 'survival_hg_mi') {
-        keep <- Y$grade == 'hg' & Y$stage == 'mi'
-      } else {
-        stop('invalid survival_table: ', survival_table)
-      }
-      
-      t <- table(Y[[vs$outcome]][keep])
-      
-      # currently skip if n < 10 or more than 90% of patients are censured
-      if (sum(t) < 10 || proportions(t)['0']>0.90) {
-        cat('  insufficient samples for ', ds, ' (', survival_table, ') -- skipping\n')
-        next
-      }
-
-      res <- coxph_test(X[,keep], Y[[vs$times]][keep], Y[[vs$outcomes]][keep])
-      gene <- row.names(res)
-      res.df <- data.frame(gene, dataset = ds, endpoint = v, res)
-      rownames(res.df) <- NULL
-      cat('  adding results to mongo ...\n')
-      m <- mongo_connect(survival_table)
-      m$insert(data.frame(res.df))
-      m$disconnect(gc = FALSE)
-      
-      # if (!ba_added) {
-      #   res.df <- data.frame(gene, dataset = ds, endpoint = 'ba', res)
-      #   rownames(res.df) <- NULL
-      #   cat('  adding ba results to mongo ...\n')
-      #   m <- mongo_connect(survival_table)
-      #   m$insert(data.frame(res.df))
-      #   m$disconnect(gc = FALSE)
-      #   ba_added <- TRUE
-      # }
-      
     }
-    
     cat('\n')
   }
-
+  
 }
 
 # add mongo indices
@@ -289,4 +305,9 @@ for (v in collections) {
   if (m$count() > 0) {
     m$index('{"gene": 1}')
   }
+}
+
+
+if (args$expression == 'yes') {
+  mongo_add_genes()
 }

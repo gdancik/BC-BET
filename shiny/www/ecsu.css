@@ -4,6 +4,20 @@
  font-size:25px;
 }
 
+#invalidGeneOutput {
+    background-color:white;
+    color: gray;
+}
+
+
+.red {
+    color:red;
+}
+
+.green {
+    color:green;
+}
+
 .welcome {
     margin-left: 2%;
     margin-right:2%;
@@ -39,11 +53,33 @@ td {
     /*font-color: green;*/
 }
 
+.panel-heading {
+    background-image: linear-gradient(#04519b,#044687 60%,#033769);
+}
+.panel-title {
+    color: white
+}
                   
-.blue-button {
+.blue-button, .blue-button:hover {
     background-image: linear-gradient(#04519b,#044687 60%,#033769);
     color:#FFF;
 }
+
+.blue-button:hover {
+   font-weight:bold;
+} 
+
+.red-button, .red-button:focus {
+    background-color: darkred;
+    color:#FFF;
+}
+
+.red-button:hover {
+    background-color:darkred;
+    color:white;
+    font-weight:bold;
+}
+
 
 .width100 {
     width: 100%;
@@ -134,7 +170,7 @@ td {
 }
 
 
-#plotsPage, #tabSummaryTable {
+#plotsPage, #tabSummaryTable, #tabSummaryMultiTable {
     margin-top: 5px;
     background-color: aliceblue;
 }

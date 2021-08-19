@@ -12,7 +12,7 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # load expression data
 library(GEOquery)
-GSE48075 = getGEO('GSE48075')
+GSE48075 = getGEO('GSE48075', getGPL = PROCESS_EXPRESSION)
 mda2.expr <- exprs(GSE48075[[1]])
 GSE48075.p <- pData(GSE48075[[1]])
 

@@ -14,7 +14,7 @@ file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # load expression and platform data
 
-auh1 <- getGEO('GSE3167')
+auh1 <- getGEO('GSE3167', getGPL = PROCESS_EXPRESSION)
 auh1.expr <- exprs(auh1[[1]])
 
 if (PROCESS_EXPRESSION) {
