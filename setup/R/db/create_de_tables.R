@@ -231,9 +231,15 @@ for (ds in datasets) {
           next
         }
         
-        # skip HG_MI_COHORTS if we are looking at survival or lg_nmi
-        if (ds %in% HG_MI_COHORTS &&
+        # skip HG_MI_COHORTS if we are looking at survival or lg_nmi,
+        if (ds %in% c(HG_MI_COHORTS) &&
             survival_table %in% c('survival', 'survival_lg_nmi')) {
+          next
+        }
+        
+        # skip hg/mi analysis for lindgren1 because of cystectomies
+        if (ds == 'lindgren1' &&
+            survival_table == 'survival_hg_mi') {
           next
         }
         
