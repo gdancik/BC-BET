@@ -126,9 +126,9 @@ resetResultsPage <- function(selectedGene) {
       
       updateTextAreaInput(session, "multiGeneInput", value = "")
       catn('update tabset to Summary')
-      updateTabsetPanel(inputId = 'resultsPage', selected = 'Summary')
       toggleSurvivalPlots(input$cutpoint)
       updateTabsetPanel(session, 'page', selected = 'Results')
+      updateTabsetPanel(inputId = 'resultsPage', selected = 'Summary')
   } else { # multiple genes selected
       hideTab('page', 'Results')
     
