@@ -9,8 +9,12 @@ More information and a link to the tool can be found at the BC-BET homepage: htt
 ## Citation
 Dancik, G.M. An online tool for evaluating diagnostic and prognostic gene expression biomarkers in bladder cancer. BMC Urol 2015, 15:59. ([link](http://biomedcentral.com/1471-2490/15/59)) 
 
+## Running BC-BET
 
-## BC-BET setup
+For instructions on running BC-BET locally, see [local](local/README.md)
+
+
+## BC-BET setup (for developers)
 
 ### Update platform data
 

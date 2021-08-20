@@ -1,7 +1,14 @@
 library(mongolite)
 
+
 if (is.null(getOption('mongo.host'))) {
-        options(mongo.host = "0.0.0.0:2000")
+
+       mm <- Sys.getenv('MONGO_HOST')
+       if (mm == '') {
+           mm <- "0.0.0.0:2000"
+       }
+       options(mongo.host = mm)
+       rm(mm)
 }
 
 mongo_connect <- function(collection, user = "root", pass = "password",

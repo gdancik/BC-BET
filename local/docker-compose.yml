@@ -1,0 +1,34 @@
+# modified from gdancik/lamp-rm which is modified from: https://linuxhint.com/lamp_server_docker/
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+
+  mongo:
+    image: gdancik/bcbet-mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password 
+    ports:
+      - 2000:27017
+
+  mongo-express:
+    image: mongo-express 
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: password
+
+  bcbet:
+    image: gdancik/bcbet-ui
+    restart: always
+    ports:
+        - 3838:3838
+    environment:
+        MONGO_HOST: mongo
+    links:
+        - mongo
+
