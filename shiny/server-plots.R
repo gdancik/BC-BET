@@ -33,7 +33,7 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL, trea
     if (!is.null(plotType)) {
       stop('plotType must be NULL if clin_column is NULL')
     }
-    df <- data.frame(id = y$id, x = x$expr[[1]], y[,-1])
+    df <- data.frame(id = y$id, x = as.double(x$expr[[1]]), y[,-1])
     colnames(df)[2] <- x$gene
     return(df)
   } 
@@ -62,9 +62,9 @@ get_mongo_df <- function(ds, gene_qry, clin_column = NULL, plotType = NULL, trea
   } 
   
   if (length(clin_column) == 1) {
-    df <- data.frame(x = x$expr[[1]], y = y[,clin_column])
+    df <- data.frame(x = as.double(x$expr[[1]]), y = y[,clin_column])
   } else {
-    df <- data.frame(x = x$expr[[1]],
+    df <- data.frame(x = as.double(x$expr[[1]]),
                      y1 = y[,clin_column[1]],
                      y2 = y[,clin_column[2]])
     

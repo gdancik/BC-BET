@@ -242,13 +242,14 @@ addMongoData <- function(ds, D = NULL) {
   m$drop()
 
   x <- D$X
-
+  
   df <- apply(x, 1,
               function(x) {
                 paste0('[',paste0(x, collapse = ','),']')
               }
   )
   df <- paste(paste0('"expr"'), df, sep = ':')
+  df <- gsub('NA', '\"NA\"', df)
   x <- paste0('{', '"gene": "',rownames(x), '",',df, '}')
   m$insert(x)
   m$index(add = 'gene')
