@@ -1,5 +1,7 @@
 # process lindgren1 data and lindgren2 data
 
+library(GEOquery)
+
 ########################################################################
 # lindgren 1
 ########################################################################
@@ -138,6 +140,8 @@ lindgren2_clinical <- create_clinical_table(id = l2.names,
                                             stage = GSE32548.stage,
                                             dss_time = GSE32548.time,
                                             dss_outcome = GSE32548.outcome)
+
+colnames(lindgren2.expr) <- lindgren2_clinical$id
 
 ds_name <- 'lindgren2'
 file2_expr <- paste0('../../data/processed/', ds_name, '.RData')

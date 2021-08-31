@@ -4,7 +4,6 @@ on:
     push:
         paths:
             - setup/R/process/process_*.R
-            - setup/R/process/run_all.R 
 jobs:
   build:
 
@@ -42,8 +41,18 @@ jobs:
           remotes::install_cran('dplyr')
       shell: Rscript {0}
 
-    - name: Test run_all.R 
-      run:  cd setup/R/process/ && Rscript run_all.R
+    - id: files
+      uses: jitterbit/get-changed-files@v1
+
+    - name: Test new/modified processing scripts 
+      run:  |
+            cd setup/R/process
+            for changed_file in ${{ steps.files.outputs.all }}; do
+                if [[ "$changed_file" == "setup/R/process/process_"* ]]; then
+                    echo "Rscript ${changed_file##*/}."
+                    Rscript ${changed_file##*/}
+                fi
+            done
 
     - name: Validate IDs 
       run:  cd setup/R/process/ && Rscript validate.R
