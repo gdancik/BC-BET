@@ -55,7 +55,7 @@ wd <- setwdToCurrentFileLocation()
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
   args <- c('GPL96', 'GPL6102', 'GPL91', 'GPL570', 'GPL4060', 'GPL6947', 
-            'GPL14951', 'GPL6480')
+            'GPL14951', 'GPL6480', 'GPL17692')
 }
 
 for (a in args) {
@@ -89,7 +89,21 @@ for (a in args) {
   }else if (a %in% "GPL14951") {
     x <- dplyr::filter(pl, !is.na(Entrez_Gene_ID)) %>%
       dplyr::select('ID', 'Symbol')
-  }else {
+  } else if (a %in% "GPL17692") {
+    x <- dplyr::select(pl, 'ID', 'gene_assignment') %>% 
+         dplyr::filter(gene_assignment != "---")
+    
+    ss <- strsplit(x$gene_assignment, " /// ")
+    
+    get_gene <- function(x) {
+      gn <- unique(sapply(strsplit(x, ' // '), `[`, 2))
+      paste(gn, collapse = " /// ")
+    }
+    
+    genes_only <- sapply(ss, get_gene)
+    x <- transmute(x, ID = ID, Symbol = genes_only)
+    
+  } else {
     stop('not implemented')
   }
   
