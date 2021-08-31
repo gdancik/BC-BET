@@ -2,7 +2,7 @@
 
 library(GEOquery)
 
-Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 2) #otherwise we have an error in Github workflow
+Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 3) #otherwise we have an error in Github workflow
 
 cat('processing elamin_blood...\n\n')
 
