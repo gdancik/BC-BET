@@ -32,13 +32,15 @@ jobs:
       uses: actions/cache@v2
       with:
             path: ${{ env.R_LIBS_USER }}
-            key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-GEOquery-2
+            key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-GEOquery-3
 
     - name: Query dependencies
       run: |
           remotes::install_bioc('GEOquery')
           remotes::install_bioc('impute')
           remotes::install_cran('dplyr')
+          remotes::install_cran('UCSCXenaTools')
+          remotes::install_cran('edgeR')
       shell: Rscript {0}
 
     - id: files

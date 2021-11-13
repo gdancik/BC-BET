@@ -9,14 +9,18 @@ if (!exists("PROCESS_EXPRESSION")) PROCESS_EXPRESSION <- TRUE
 #' @return A gene-level expression matrix
 #' @note Regex only captures 'words'; will not find genes such as
 #' TRA@ or IGL@ or Ig alpha 1-[alpha]2m (these are not valid gene symbols)
-get_expression <- function(X, pl) {
+get_expression <- function(X, pl, sep = TRUE) {
 
   # we only care about platform data for probes in X
   pl <- pl[pl[,1] %in% rownames(X),]
   
   # get vector of unique genes
-  genes <- unique(unlist(strsplit(pl[,2], ' /// ')))
-
+  if (sep) {
+    genes <- unique(unlist(strsplit(pl[,2], ' /// ')))
+  } else {
+    genes <- pl[,2]
+  }
+  
   n <- length(genes)
   
   allX <- vector(mode = "list",length = length(genes))
