@@ -9,41 +9,66 @@ More information and a link to the tool can be found at the BC-BET homepage: htt
 ## Citation
 Dancik, G.M. An online tool for evaluating diagnostic and prognostic gene expression biomarkers in bladder cancer. BMC Urol 2015, 15:59. ([link](http://biomedcentral.com/1471-2490/15/59)) 
 
-## Running BC-BET
+## BC-BET setup (for developers - setup from scratch)
 
-BC-BET v2.0 is being migrated to a new webserver and will be available from a public URL shortly. You may also run BC-BET locally using Docker. 
+### Update platform data
 
-### Instructions for running  *BC-BET* locally using Docker
+From the BC-BET home directory, run
+```
+cd setup/R 
+Rscript get_platforms.R
+```
 
-1. First, download and install docker from https://docs.docker.com/get-docker/.
+### Process datasets
 
-2. Save the docker compose script, available at https://raw.githubusercontent.com/gdancik/BC-BET/main/local/docker-compose.yml, to a file named 'docker-compose.yml'
-
-3. From your docker terminal, run the following from the directory containing the docker-compose.yml file:
+From the BC-BET home directory, run
 
 ```
+cd setup/R/process
+Rscript run_all.R
+```
+
+### Create mysql and mongo databases
+
+#### Initialize empty databases using lamp-rm
+
+Use docker to launch a lamp-rm stack by following the instructions at https://github.com/gdancik/lamp-rm
+
+#### Add data
+
+MySQL is used to store DE results, while Mongo is used to store expression and clinical data. 
+
+To add all data, run the following from the BC-BET home directory:
+
+```
+cd setup/R/db 
+Rscript create_de_tables.R --mongo=yes
+```
+
+For options, run
+```
+Rscript create_de_tables.R --help
+```
+
+Database data will be stored to volumes *lamp-rm_mysql-data* and *lamp-rm_mongo-data* and will persist as long as the volumes are not deleted.
+
+#### Create docker database images (for distribution to others)
+
+Docker database images can be created for distribution to others. The following code creates mysql and mongo database images from the docker volumes and pushes the images, *gdancik/bcbet-mysql* and *gdancik/bcbet-mongo*, to docker.
+From the BC-BET home directory, run
+
+```
+cd setup/R/db 
+./save-db-docker.sh
+```
+
+### Run BC-BET from docker database images
+
+Use docker compose with a modified version of lamp-rm (see https://github.com/gdancik/BC-BET/tree/main/db#readme). Note that *lamp-rm* will need to be shutdown in order to tdo this.
+
+From the BC-BET home directory, run
+
+```
+cd db 
 docker compose up -d
 ```
-
-Note that this may take several minutes the first time. 
-
-4. You can now access *BC-BET* by opening your browser and entering the following:
-
-```
-http://localhost:3838
-```
-
-Note that it may take a minute or so for the mongo db to fully load.
-
-If interested, you can also access the mongo db directly from the following URL:
-
-```
-http://localhost:8081/
-```
-
-5. If you wish to shutdown BC-BET, you can run the following docker command from the directory containing the docker-compose.yml file:
-
-```
-docker compose down
-```
-
