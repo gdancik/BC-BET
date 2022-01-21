@@ -52,4 +52,7 @@ BC-BET v2.0 is being migrated to a new webserver and will be available from a pu
 ### Instructions for developers
 
 See [docs/developers.md](docs/developers.md)
- 
+
+### For shinyproxy
+
+See [shinyproxy/README.md](shinyproxy/README.md) 
