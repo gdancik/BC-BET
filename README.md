@@ -73,3 +73,7 @@ From the BC-BET home directory, run
 cd db 
 docker compose up -d
 ```
+
+### Page theme
+
+This page uses a slightly modified version of the Cayman theme ([https://github.com/pages-themes/cayman](https://github.com/pages-themes/cayman))
