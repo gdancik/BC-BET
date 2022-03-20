@@ -56,3 +56,18 @@ See [docs/developers.md](docs/developers.md)
 ### For shinyproxy
 
 See [shinyproxy/README.md](shinyproxy/README.md) 
+
+### Run BC-BET from docker database images
+
+Use docker compose with a modified version of lamp-rm (see https://github.com/gdancik/BC-BET/tree/main/db#readme). Note that *lamp-rm* will need to be shutdown in order to tdo this.
+
+From the BC-BET home directory, run
+
+```
+cd db 
+docker compose up -d
+```
+
+### Page theme
+
+This page uses a slightly modified version of the Cayman theme ([https://github.com/pages-themes/cayman](https://github.com/pages-themes/cayman))
