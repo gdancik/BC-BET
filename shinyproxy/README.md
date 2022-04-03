@@ -21,3 +21,9 @@ docker run -itd --name bcbet-mongo --env MONGO_INITDB_ROOT_USERNAME=root --env M
 ```
 docker/set_mongo_ip.sh
 ```
+
+### run shinyproxy
+
+```
+nohup java -jar shinyproxy-2.6.1.jar &
+```
