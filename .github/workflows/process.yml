@@ -41,15 +41,17 @@ jobs:
           remotes::install_cran('dplyr')
           remotes::install_cran('UCSCXenaTools')
           remotes::install_cran('edgeR')
+          remotes::install_cran('ggplot2')
       shell: Rscript {0}
 
     - id: files
       uses: jitterbit/get-changed-files@v1
+      continue-on-error: true
 
     - name: Test new/modified processing scripts 
       run:  |
             cd setup/R/process
-            for changed_file in ${{ steps.files.outputs.all }}; do
+            for changed_file in ${{ steps.files.outputs.added_modified }}; do
                 if [[ "$changed_file" == "setup/R/process/process_"* ]]; then
                     echo "Rscript ${changed_file##*/}."
                     Rscript ${changed_file##*/}
