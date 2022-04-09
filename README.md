@@ -13,7 +13,9 @@ Dancik, G.M. An online tool for evaluating diagnostic and prognostic gene expres
 
 ## Running BC-BET
 
-BC-BET v2.0 is being migrated to a new webserver and will be available from a public URL shortly. However, you can run *BC-BET* locally using Docker. 
+BC-BET v2.0 is available from the following URL:
+https://bioinformatics.easternct.edu/app/bcbet
+
 
 ### Instructions for running  *BC-BET* locally using Docker
 
