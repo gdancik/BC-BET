@@ -14,13 +14,14 @@ jsCode <- "shinyjs.setReadOnly = function(id) {
 function(request) {
 
 shinyUI(
-  
+
     navbarPage(title = HTML('<a style = "color:white" href = "/app/BCBET">BC-BET</a>'),
              windowTitle = "Bladder Cancer Biomarker Evaluation Tool",
              id = "page", 
              header =  pleaseWait(),
                
     tabPanel('Home',
+             tags$head(includeHTML(("google-analytics.html"))),
              HTML("<link href='https://fonts.googleapis.com/css?family=Courgette' rel='stylesheet' type='text/css'>"),
              HTML("<script src='bcbet.js'></script>"),
              #br(),

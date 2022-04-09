@@ -13,13 +13,30 @@ shinyServer(function(input, output, session) {
 
   # include this here because shinyServer gets run on page refresh,
   # and these need to be reset
+
+  ##################################################################
+  # original approach with tabs -- but tab change does not always
+  # happen on bioinformatics server
+  ##################################################################
   
-  setGLOBAL('insertSingle', FALSE)
-  setGLOBAL('insertMulti', FALSE)
+  # setGLOBAL('insertSingle', FALSE)
+  # setGLOBAL('insertMulti', FALSE)
+  # 
+  # removeTab('page', 'MultiResults')
+  # removeTab('page', 'Results')
+  ##################################################################
+ 
+  ################################################################## 
+  # new approach, though we will show/hide tabs on start-up
+  setGLOBAL('insertSingle', TRUE)
+  setGLOBAL('insertMulti', TRUE)
   
-  
-  removeTab('page', 'MultiResults')
-  removeTab('page', 'Results')
+  insertTab('page', tabResults, "Home", position = "after")
+  hideTab('page', 'Results')
+
+  insertTab('page', tabResultsMulti, "Home", select = TRUE, position = "after")
+  hideTab('page', 'MultiResults')
+  ##################################################################
   
   VALID_GENES <- tryCatch({
     m <- mongo_connect('genes')

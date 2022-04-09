@@ -4,7 +4,6 @@ on:
     push:
         paths:
             - setup/R/process/process_*.R
-            - setup/R/process/run_all.R 
 jobs:
   build:
 
@@ -33,16 +32,29 @@ jobs:
       uses: actions/cache@v2
       with:
             path: ${{ env.R_LIBS_USER }}
-            key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-GEOquery-1
+            key: ${{ runner.os }}-${{ hashFiles('.github/R-version') }}-GEOquery-3
 
     - name: Query dependencies
       run: |
           remotes::install_bioc('GEOquery')
           remotes::install_bioc('impute')
+          remotes::install_cran('dplyr')
+          remotes::install_cran('UCSCXenaTools')
+          remotes::install_cran('edgeR')
       shell: Rscript {0}
 
-    - name: Test run_all.R 
-      run:  cd setup/R/process/ && Rscript run_all.R
+    - id: files
+      uses: jitterbit/get-changed-files@v1
+
+    - name: Test new/modified processing scripts 
+      run:  |
+            cd setup/R/process
+            for changed_file in ${{ steps.files.outputs.all }}; do
+                if [[ "$changed_file" == "setup/R/process/process_"* ]]; then
+                    echo "Rscript ${changed_file##*/}."
+                    Rscript ${changed_file##*/}
+                fi
+            done
 
     - name: Validate IDs 
       run:  cd setup/R/process/ && Rscript validate.R

@@ -129,6 +129,9 @@ summarize_multi_results_de <- function(r1, measure, pvalue) {
   m1 <- match(paste0(ds, '_', measure), colnames(r1))
   m2 <- match(paste0(ds, '_', pvalue), colnames(r1))
   
+  m1 <- m1[!is.na(m1)]
+  m2 <- m2[!is.na(m2)]
+  
   measure_threshold <- 1
   if (measure == 'auc') measure_threshold <- 0.50
  

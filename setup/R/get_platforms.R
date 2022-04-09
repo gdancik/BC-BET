@@ -54,7 +54,8 @@ wd <- setwdToCurrentFileLocation()
 # get arguments; if no arguments are specified, get all platforms
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) == 0) {
-  args <- c('GPL96', 'GPL6102', 'GPL91', 'GPL570', 'GPL4060', 'GPL6947', 'GPL14951')
+  args <- c('GPL96', 'GPL6102', 'GPL91', 'GPL570', 'GPL4060', 'GPL6947', 
+            'GPL14951', 'GPL6480', 'GPL17692')
 }
 
 for (a in args) {
@@ -68,10 +69,12 @@ for (a in args) {
   } else if (a %in% c('GPL6102', 'GPL6947')){
     x <- dplyr::select(pl, 'ID', 'Symbol') %>%
       dplyr::filter (Symbol != '')
+  } else if (a == 'GPL6480') {
+    x <- dplyr::select(pl, 'ID', 'GENE_SYMBOL') %>%
+      dplyr::filter (GENE_SYMBOL != '')
   } else if (a == 'GPL4060') {
     # map gene symbols to GB ACC using org.Hs.eg.db
     library(org.Hs.eg.db)
-    
     acc <- unique(pl$GB_ACC[pl$GB_ACC != ""])
     s <- AnnotationDbi::select(org.Hs.eg.db, keys = acc, 
                 columns = c("SYMBOL"), keytype = "ACCNUM" )
@@ -86,7 +89,21 @@ for (a in args) {
   }else if (a %in% "GPL14951") {
     x <- dplyr::filter(pl, !is.na(Entrez_Gene_ID)) %>%
       dplyr::select('ID', 'Symbol')
-  }else {
+  } else if (a %in% "GPL17692") {
+    x <- dplyr::select(pl, 'ID', 'gene_assignment') %>% 
+         dplyr::filter(gene_assignment != "---")
+    
+    ss <- strsplit(x$gene_assignment, " /// ")
+    
+    get_gene <- function(x) {
+      gn <- unique(sapply(strsplit(x, ' // '), `[`, 2))
+      paste(gn, collapse = " /// ")
+    }
+    
+    genes_only <- sapply(ss, get_gene)
+    x <- transmute(x, ID = ID, Symbol = genes_only)
+    
+  } else {
     stop('not implemented')
   }
   

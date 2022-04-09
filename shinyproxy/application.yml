@@ -1,0 +1,21 @@
+proxy:
+  title: Open Analytics Shiny Proxy
+  logo-url: https://www.openanalytics.eu/shinyproxy/logo.png
+  landing-page: /
+  heartbeat-rate: 10000
+  heartbeat-timeout: 60000
+  port: 8080
+  specs:
+  - id: 01_hello
+    display-name: Hello Application
+    description: Application which demonstrates the basics of a Shiny app
+    container-cmd: ["R", "-e", "shinyproxy::run_01_hello()"]
+    container-image: openanalytics/shinyproxy-demo
+  - id: 99_bcbet
+    container-cmd: ["R", "-e", "shiny::runApp('/root/BCBET/')"]
+    container-image: gdancik/bcbet-ui:latest
+
+logging:
+  file:
+    name: shinyproxy.log
+

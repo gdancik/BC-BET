@@ -2,7 +2,7 @@
 
 GLOBAL <- list(#gene = NULL, geneResults = NULL,
   submitType = 'qry', 
-  DEBUG = TRUE,
+  DEBUG = FALSE,
   TEST = FALSE,
   url_params = 'page',
   insertSingle = FALSE,

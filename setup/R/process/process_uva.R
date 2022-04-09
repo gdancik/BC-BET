@@ -26,7 +26,6 @@ if (PROCESS_EXPRESSION) {
 
   # get gene-level expression values
   uva.expr <- get_expression(uva.expr, GPL96)
-
 }
 
 ### extract clinical data -- limit to 

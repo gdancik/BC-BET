@@ -1,4 +1,4 @@
-# process auh1 data 
+# process auh1 data set 
 
 library(GEOquery)
 
@@ -13,17 +13,12 @@ file_expr <- paste0('../../data/processed/', ds_name, '.RData')
 file_clinical <- paste0('../../data/clinical/', ds_name, '.RData')
 
 # load expression and platform data
-
 auh1 <- getGEO('GSE3167', getGPL = PROCESS_EXPRESSION)
 auh1.expr <- exprs(auh1[[1]])
 
 if (PROCESS_EXPRESSION) {
 
   load("../../data/platforms/GPL96.RData")
-
-  #################################################
-
-  #TODO - take log2 of auh1 and save in auh1
 
   # generate boxplot
   generate_boxplot(auh1.expr, 'auh1', FALSE)
@@ -33,23 +28,15 @@ if (PROCESS_EXPRESSION) {
 
   generate_boxplot(auh1.expr, 'auh1', FALSE)
 
-  #View(auh1.expr)
-
   # get gene-level expression values
   auh1.expr <- get_expression(auh1.expr, GPL96)
-  #View(auh1.expr)
 
 }
 
-#################################################
 
 ### extract clinical data -- limit to 
 GSE3167.p <- pData(auh1[[1]])
 
-#View(GSE3167.p)
-
-
-######################################################
 
 keep <- (GSE3167.p$source_name_ch1 == "Normal bladder biopsy" | GSE3167.p$source_name_ch1 == "Bladder tumor tissue" | GSE3167.p$source_name_ch1=="Bladder timor tissue")
 

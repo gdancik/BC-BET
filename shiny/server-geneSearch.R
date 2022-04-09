@@ -55,20 +55,21 @@ observeEvent(input$btnGeneSearch,{
   # do nothing if no valid gene is selected
   if (is.null(input$geneInput) | input$geneInput == "") return()
 
+  catn('calling resetResultsPage...')
   resetResultsPage(input$geneInput)
   
 }, ignoreInit = TRUE)
 
 
 resetResultsPage <- function(selectedGene) {
-  
+  catn('in resetResultsPage...')
   setGLOBAL('submitType', 'btn')
   
   for (ch in REACTIVE_SEARCH$parameters) {
     REACTIVE_SEARCH$parameters[[ch]] <- NULL
   }
   
-
+  catn('please wait...')
   shinyjs::runjs("$('#please-wait').removeClass('hide');")
   
   
@@ -99,6 +100,7 @@ resetResultsPage <- function(selectedGene) {
      ), style = 'margin:0px; color:darkred;', )  
     
   if (length(selectedGene) == 1) {
+      catn('selected single gene...')
       shinyjs::disable('btnGeneSearch')
     
       # adding/removing tabs causes issues with a blue line;
@@ -114,15 +116,20 @@ resetResultsPage <- function(selectedGene) {
         showTab('page', 'Results') 
       }
       
+      catn("getting single gene results...")
       getSingleGeneResults()
+      catn('done')
+      
       output$ResultsHeader <- renderUI({
         myheader
       })
+      
       updateTextAreaInput(session, "multiGeneInput", value = "")
-      updateTabsetPanel(inputId = 'resultsPage', selected = 'Summary')
+      catn('update tabset to Summary')
       toggleSurvivalPlots(input$cutpoint)
       updateTabsetPanel(session, 'page', selected = 'Results')
-  } else {
+      updateTabsetPanel(inputId = 'resultsPage', selected = 'Summary')
+  } else { # multiple genes selected
       hideTab('page', 'Results')
     
     if (!GLOBAL$insertMulti) {      
