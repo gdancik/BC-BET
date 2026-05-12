@@ -5,7 +5,7 @@ Version 2 of the *Bladder Cancer Biomarker Evaluation Tool (BC-BET)*.
 ## Description
 Rapid evaluation of candidate diagnostic and prognostic gene expression biomarkers in 15 bladder cancer patient cohorts (N = 1559). BC-BET calculates how strongly a gene's expression is associated with tumor presence (distinguishing tumor from normal samples), tumor grade (distinguishing low- from high-grade tumors), tumor stage (distinguishing non-muscle invasive from muscle invasive samples), and patient outcome (e.g., disease-specific survival) in each cohort. Versions of BC-BET for the evaluation of methylation biomarkers in 4 cohorts (N = 271 samples), for distinguishing tumor from normal samples, and for expression analysis across 40 commonly used bladder cancer cell lines are also available upon request. 
 
-BC-BET: <a href = "http://18.204.217.91:8080/app/bcbet">http://18.204.217.91:8080/app/bcbet</a>
+BC-BET: <a href = "https://bioinformatics.easternct.edu/app/bcbet/">https://bioinformatics.easternct.edu/app/bcbet/</a>
 
 ## Citation
 Dancik, G.M. An online tool for evaluating diagnostic and prognostic gene expression biomarkers in bladder cancer. BMC Urol 2015, 15:59. ([link](http://biomedcentral.com/1471-2490/15/59)) 
